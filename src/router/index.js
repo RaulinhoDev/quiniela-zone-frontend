@@ -4,7 +4,10 @@ const routes = [
   // ── Públicas ──────────────────────────────────────────────────
   { path: '/',         component: () => import('@/views/LandingView.vue'),              meta: { public: true } },
   { path: '/login',    component: () => import('@/views/auth/LoginView.vue'),           meta: { public: true } },
-  { path: '/registro', component: () => import('@/views/auth/RegisterView.vue'),        meta: { public: true } },
+  { path: '/registro',        component: () => import('@/views/auth/RegisterView.vue'),        meta: { public: true } },
+  { path: '/verificar-email', component: () => import('@/views/auth/VerificarEmailView.vue'),  meta: { public: true } },
+  { path: '/forgot-password', component: () => import('@/views/auth/ForgotPasswordView.vue'), meta: { public: true } },
+  { path: '/reset-password',  component: () => import('@/views/auth/ResetPasswordView.vue'),  meta: { public: true } },
   { path: '/q/:id',    component: () => import('@/views/quinielas/QuinielaPublicaView.vue'), meta: { public: true } },
 
   // ── App usuario (requiere login) ──────────────────────────────

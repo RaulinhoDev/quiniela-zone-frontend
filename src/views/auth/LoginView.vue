@@ -19,6 +19,10 @@
           <input v-model="form.password" type="password" placeholder="••••••••" required />
         </div>
 
+        <div class="forgot-row">
+          <router-link to="/forgot-password" class="forgot-link">¿Olvidaste tu contraseña?</router-link>
+        </div>
+
         <div v-if="error" class="alert alert-error">{{ error }}</div>
 
         <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
@@ -69,13 +73,13 @@ async function handleLogin() {
   border-radius: var(--radius-lg); padding: 2.5rem;
   width: 100%; max-width: 420px; box-shadow: var(--shadow);
 }
-.auth-logo {
-  display: flex; align-items: center; gap: 0.5rem;
-  text-decoration: none; margin-bottom: 2rem;
-}
-.logo-text { font-family: var(--font-display); font-size: 1.2rem; letter-spacing: 0.1em; color: var(--accent); }
+.auth-logo  { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; margin-bottom: 2rem; }
+.logo-text  { font-family: var(--font-display); font-size: 1.2rem; letter-spacing: 0.1em; color: var(--accent); }
 .auth-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.3rem; }
 .auth-sub   { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.75rem; }
+.forgot-row { text-align: right; margin-bottom: 1rem; margin-top: -0.5rem; }
+.forgot-link{ color: var(--text-muted); font-size: 0.82rem; text-decoration: none; }
+.forgot-link:hover { color: var(--accent); }
 .auth-footer{ text-align: center; margin-top: 1.5rem; font-size: 0.88rem; color: var(--text-muted); }
 .auth-link  { color: var(--accent); text-decoration: none; font-weight: 600; margin-left: 0.3rem; }
 .auth-link:hover { text-decoration: underline; }
