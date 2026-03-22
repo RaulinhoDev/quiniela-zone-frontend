@@ -11,9 +11,32 @@
         <div class="nav-links">
           <router-link to="/app/dashboard" class="nav-link">Mis Quinielas</router-link>
           <router-link to="/app/perfil" class="nav-link">Perfil</router-link>
-          <router-link v-if="auth.user?.role === 'ADMIN'" to="/admin" class="nav-link admin-link">
+
+          <!-- Link Premium — distinto si ya es premium o no -->
+          <router-link
+            v-if="!auth.user?.is_premium"
+            to="/app/premium"
+            class="nav-link premium-link"
+          >
+            Premium
+          </router-link>
+          <router-link
+            v-else
+            to="/app/premium"
+            class="nav-link premium-active"
+          >
+            Premium
+          </router-link>
+
+          <!-- Link Admin solo para ADMIN -->
+          <router-link
+            v-if="auth.user?.role === 'ADMIN'"
+            to="/admin"
+            class="nav-link admin-link"
+          >
             Admin
           </router-link>
+
           <button class="btn btn-outline btn-sm" @click="handleLogout">Salir</button>
         </div>
       </div>
@@ -76,10 +99,9 @@ function handleLogout() {
 }
 .nav-link:hover, .nav-link.router-link-active { color: var(--text-primary); }
 
-.app-main { flex: 1; padding: 2rem 0; }
+.premium-link  { color: var(--accent) !important; font-weight: 600; }
+.premium-active{ color: var(--accent) !important; font-weight: 600; opacity: 0.8; }
+.admin-link    { color: var(--warning, #f0a500) !important; font-size: 0.82rem; }
 
-.admin-link {
-  color: var(--warning) !important;
-  font-size: 0.82rem;
-}
+.app-main { flex: 1; padding: 2rem 0; }
 </style>

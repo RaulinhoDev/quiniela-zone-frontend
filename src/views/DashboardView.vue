@@ -3,14 +3,14 @@
     <!-- Header -->
     <div class="dash-header">
       <div>
-        <h1 class="dash-title">Hola, {{ auth.user?.username }} 👋</h1>
+        <h1 class="dash-title">Hola, {{ auth.user?.full_name || auth.user?.username }} 👋</h1>
         <p class="dash-sub">Tus quinielas activas</p>
       </div>
       <div class="dash-actions">
         <button class="btn btn-secondary" @click="showJoinModal = true">
           Unirse con código
         </button>
-        <button class="btn btn-primary" @click="showCreateModal = true">
+        <button class="btn btn-primary" @click="abrirModalCrear">
           + Nueva quiniela
         </button>
       </div>
@@ -26,7 +26,7 @@
       <p class="empty-desc">Creá la tuya o unite a una con el código que te mandaron</p>
       <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem">
         <button class="btn btn-secondary" @click="showJoinModal = true">Unirse con código</button>
-        <button class="btn btn-primary" @click="showCreateModal = true">Crear quiniela</button>
+        <button class="btn btn-primary" @click="abrirModalCrear">Crear quiniela</button>
       </div>
     </div>
 
@@ -72,33 +72,81 @@
     </div>
 
     <!-- Modal crear quiniela -->
-    <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
-      <div class="modal">
+    <div v-if="showCreateModal" class="modal-overlay" @click.self="cerrarModalCrear">
+      <div class="modal modal-lg">
         <div class="modal-header">
           <span class="modal-title">NUEVA QUINIELA</span>
-          <button class="modal-close" @click="showCreateModal = false">✕</button>
+          <button class="modal-close" @click="cerrarModalCrear">✕</button>
         </div>
 
+        <!-- Paso 1: Nombre -->
         <div class="form-group">
           <label>Nombre de la quiniela</label>
           <input v-model="createForm.name" placeholder="Ej: Clausura 2025 — Grupo del trabajo" />
         </div>
+
+        <!-- Paso 2: Confederación -->
         <div class="form-group">
+          <label>Confederación</label>
+          <div class="conf-grid">
+            <button
+              v-for="conf in confederaciones"
+              :key="conf.id"
+              class="conf-btn"
+              :class="{ active: createForm.confederacion === conf.id }"
+              @click="onConfChange(conf.id)"
+              type="button"
+            >
+              <span class="conf-emoji">{{ conf.emoji }}</span>
+              <span class="conf-label">{{ conf.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Paso 3: Competencia -->
+        <div class="form-group" v-if="createForm.confederacion">
           <label>Competencia</label>
-          <select v-model="createForm.competition_id">
-            <option value="">Seleccioná competencia</option>
-            <option v-for="c in competencias" :key="c.id" :value="c.id">{{ c.name }}</option>
+          <select v-model="createForm.competition_id" @change="onCompChange">
+            <option value="">Seleccioná una competencia</option>
+            <option v-for="c in competenciasFiltradas" :key="c.id" :value="c.id">
+              {{ c.name }}
+            </option>
           </select>
         </div>
-        <div class="form-group">
+
+        <!-- Paso 4: Temporada -->
+        <div class="form-group" v-if="createForm.competition_id && temporadas.length">
           <label>Temporada</label>
-          <input v-model="createForm.season" placeholder="Ej: 2024" />
+          <select v-model="createForm.season" @change="onSeasonChange">
+            <option value="">Seleccioná temporada</option>
+            <option v-for="t in temporadas" :key="t" :value="t">{{ t }}</option>
+          </select>
         </div>
+
+        <!-- Paso 5: Torneo (Apertura/Clausura) -->
+        <div class="form-group" v-if="createForm.season && torneos.length > 1">
+          <label>Torneo</label>
+          <div class="torneo-grid">
+            <button
+              v-for="t in torneos"
+              :key="t.id"
+              class="torneo-btn"
+              :class="{ active: createForm.torneo === t.id }"
+              @click="createForm.torneo = t.id"
+              type="button"
+            >
+              {{ t.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Descripción -->
         <div class="form-group">
-          <label>Descripción (opcional)</label>
+          <label>Descripción <span class="optional">opcional</span></label>
           <input v-model="createForm.description" placeholder="Ej: La quiniela del grupo del trabajo" />
         </div>
 
+        <!-- Quiniela de pago -->
         <div class="paid-row">
           <label class="toggle-label">
             <input type="checkbox" v-model="createForm.is_paid" />
@@ -109,6 +157,7 @@
           </div>
         </div>
 
+        <!-- Reglas de puntuación -->
         <div class="scoring-section">
           <div class="scoring-title">Reglas de puntuación</div>
           <div class="form-row">
@@ -127,7 +176,7 @@
         <div v-if="createSuccess" class="alert alert-success">{{ createSuccess }}</div>
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showCreateModal = false">Cancelar</button>
+          <button class="btn btn-secondary" @click="cerrarModalCrear">Cancelar</button>
           <button class="btn btn-primary" @click="createQuiniela" :disabled="creating">
             {{ creating ? 'Creando...' : 'Crear Quiniela' }}
           </button>
@@ -168,16 +217,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
+import {
+  CONFEDERACIONES,
+  filtrarPorConfederacion,
+  extraerTemporadas,
+  extraerTorneos,
+} from '@/utils/confederaciones'
 
 const router = useRouter()
 const auth   = useAuthStore()
 
 const quinielas       = ref([])
 const competencias    = ref([])
+const matchdays       = ref([]) // jornadas de la competencia seleccionada
+const temporadas      = ref([])
+const torneos         = ref([])
 const loading         = ref(true)
 const showCreateModal = ref(false)
 const showJoinModal   = ref(false)
@@ -189,11 +247,23 @@ const joinSuccess     = ref('')
 const createError     = ref('')
 const createSuccess   = ref('')
 
+const confederaciones = CONFEDERACIONES
+
 const createForm = ref({
-  name: '', competition_id: '', season: '2024',
-  description: '', is_paid: false, entry_fee: 0,
+  name:           '',
+  confederacion:  '',
+  competition_id: '',
+  season:         '',
+  torneo:         '',
+  description:    '',
+  is_paid:        false,
+  entry_fee:      0,
   scoring: { exact_score_pts: 3, correct_winner_pts: 1 }
 })
+
+const competenciasFiltradas = computed(() =>
+  filtrarPorConfederacion(competencias.value, createForm.value.confederacion)
+)
 
 onMounted(async () => {
   try {
@@ -208,22 +278,95 @@ onMounted(async () => {
   }
 })
 
+function abrirModalCrear() {
+  createForm.value = {
+    name: '', confederacion: '', competition_id: '',
+    season: '', torneo: '', description: '',
+    is_paid: false, entry_fee: 0,
+    scoring: { exact_score_pts: 3, correct_winner_pts: 1 }
+  }
+  matchdays.value  = []
+  temporadas.value = []
+  torneos.value    = []
+  createError.value   = ''
+  createSuccess.value = ''
+  showCreateModal.value = true
+}
+
+function cerrarModalCrear() {
+  showCreateModal.value = false
+}
+
+function onConfChange(confId) {
+  createForm.value.confederacion  = confId
+  createForm.value.competition_id = ''
+  createForm.value.season         = ''
+  createForm.value.torneo         = ''
+  matchdays.value  = []
+  temporadas.value = []
+  torneos.value    = []
+}
+
+async function onCompChange() {
+  createForm.value.season = ''
+  createForm.value.torneo = ''
+  temporadas.value = []
+  torneos.value    = []
+  if (!createForm.value.competition_id) return
+
+  const res = await api.get(`/competitions/${createForm.value.competition_id}/matchdays`)
+  matchdays.value  = res.data
+  temporadas.value = extraerTemporadas(res.data)
+
+  // Preseleccionar la temporada más reciente
+  if (temporadas.value.length) {
+    createForm.value.season = temporadas.value[0]
+    onSeasonChange()
+  }
+}
+
+function onSeasonChange() {
+  createForm.value.torneo = ''
+  torneos.value = extraerTorneos(matchdays.value, createForm.value.season)
+
+  // Si solo hay un torneo, preseleccionarlo
+  if (torneos.value.length === 1) {
+    createForm.value.torneo = torneos.value[0].id
+  }
+}
+
 async function createQuiniela() {
   createError.value   = ''
   createSuccess.value = ''
-  if (!createForm.value.name || !createForm.value.competition_id || !createForm.value.season) {
-    createError.value = 'Nombre, competencia y temporada son obligatorios'
-    return
+
+  if (!createForm.value.name) {
+    createError.value = 'El nombre es obligatorio'; return
   }
+  if (!createForm.value.competition_id) {
+    createError.value = 'Seleccioná una competencia'; return
+  }
+  if (!createForm.value.season) {
+    createError.value = 'Seleccioná una temporada'; return
+  }
+
   creating.value = true
   try {
-    const res = await api.post('/quinielas', createForm.value)
+    const payload = {
+      name:           createForm.value.name,
+      competition_id: createForm.value.competition_id,
+      season:         createForm.value.season,
+      description:    createForm.value.description,
+      is_paid:        createForm.value.is_paid,
+      entry_fee:      createForm.value.entry_fee,
+      scoring:        createForm.value.scoring,
+    }
+
+    const res = await api.post('/quinielas', payload)
     createSuccess.value = `✓ Quiniela creada. Código: ${res.data.invite_code}`
     const misRes = await api.get('/quinielas/mis/quinielas')
     quinielas.value = misRes.data
     setTimeout(() => {
-      showCreateModal.value = false
-      createSuccess.value   = ''
+      cerrarModalCrear()
       router.push(`/app/quinielas/${res.data.id}`)
     }, 1500)
   } catch (e) {
@@ -286,20 +429,15 @@ function statusBadge(s) {
   display: flex; flex-direction: column; gap: 1rem;
 }
 .q-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
-
 .q-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
 .q-name  { font-weight: 600; color: var(--text-primary); font-size: 0.95rem; line-height: 1.3; }
 .q-comp  { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; }
 
 .q-stats {
   display: flex; background: var(--bg-surface);
-  border-radius: var(--radius); overflow: hidden;
-  border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border);
 }
-.q-stat {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  padding: 0.65rem 0.25rem; border-right: 1px solid var(--border);
-}
+.q-stat { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0.65rem 0.25rem; border-right: 1px solid var(--border); }
 .q-stat:last-child { border-right: none; }
 .q-stat-val { font-family: var(--font-display); font-size: 1.3rem; color: var(--accent); }
 .q-stat-lbl { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.1rem; }
@@ -308,9 +446,41 @@ function statusBadge(s) {
 .q-owner { font-size: 0.78rem; color: var(--text-muted); }
 .q-code  { font-family: var(--font-display); font-size: 0.9rem; color: var(--accent-2); letter-spacing: 0.08em; }
 
+/* Modal grande */
+.modal-lg { max-width: 560px; }
+
+/* Confederaciones */
+.conf-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;
+}
+.conf-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  padding: 0.75rem 0.5rem; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg-surface);
+  cursor: pointer; transition: all 0.15s; color: var(--text-secondary);
+  font-family: var(--font-body);
+}
+.conf-btn:hover { border-color: var(--border-light); color: var(--text-primary); }
+.conf-btn.active { border-color: var(--accent); background: var(--accent-glow); color: var(--accent); }
+.conf-emoji { font-size: 1.4rem; }
+.conf-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; }
+
+/* Torneos */
+.torneo-grid { display: flex; gap: 0.5rem; }
+.torneo-btn {
+  flex: 1; padding: 0.6rem; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg-surface);
+  cursor: pointer; transition: all 0.15s; color: var(--text-secondary);
+  font-family: var(--font-body); font-size: 0.9rem; font-weight: 500;
+}
+.torneo-btn:hover { border-color: var(--border-light); color: var(--text-primary); }
+.torneo-btn.active { border-color: var(--accent); background: var(--accent-glow); color: var(--accent); }
+
+.optional { font-size: 0.72rem; color: var(--text-muted); font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: 0.3rem; }
+
 .paid-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; white-space: nowrap; }
 .scoring-section { background: var(--bg-surface); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; }
-.scoring-title   { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+.scoring-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 </style>

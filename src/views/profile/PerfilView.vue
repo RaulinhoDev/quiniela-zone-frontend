@@ -34,7 +34,7 @@
 
         <div class="form-group">
           <label>Nombre completo</label>
-          <input v-model="editForm.full_name" :placeholder="auth.user?.full_name || 'Tu nombre'" />
+          <input v-model="editForm.full_name" placeholder="Tu nombre completo" />
         </div>
         <div class="form-group">
           <label>País</label>
@@ -47,11 +47,15 @@
             <option value="PA">🇵🇦 Panamá</option>
             <option value="BZ">🇧🇿 Belice</option>
             <option value="MX">🇲🇽 México</option>
+            <option value="CO">🇨🇴 Colombia</option>
+            <option value="AR">🇦🇷 Argentina</option>
+            <option value="BR">🇧🇷 Brasil</option>
             <option value="US">🇺🇸 USA</option>
+            <option value="ES">🇪🇸 España</option>
           </select>
         </div>
 
-        <div v-if="saveMsg" class="alert alert-success">{{ saveMsg }}</div>
+        <div v-if="saveMsg" :class="`alert ${saveError ? 'alert-error' : 'alert-success'}`">{{ saveMsg }}</div>
 
         <button class="btn btn-primary" @click="saveProfile" :disabled="saving">
           {{ saving ? 'Guardando...' : 'Guardar cambios' }}
@@ -66,9 +70,15 @@
         </div>
         <div class="form-group">
           <label>Nueva contraseña</label>
-          <input v-model="pwForm.new" type="password" placeholder="Mínimo 8 caracteres" />
+          <input v-model="pwForm.new" type="password" placeholder="Mínimo 8 caracteres" minlength="8" />
         </div>
-        <div v-if="pwMsg" class="alert alert-success">{{ pwMsg }}</div>
+        <div class="form-group">
+          <label>Confirmar nueva contraseña</label>
+          <input v-model="pwForm.confirm" type="password" placeholder="Repetí la nueva contraseña" />
+        </div>
+
+        <div v-if="pwMsg" :class="`alert ${pwError ? 'alert-error' : 'alert-success'}`">{{ pwMsg }}</div>
+
         <button class="btn btn-secondary" @click="changePassword" :disabled="savingPw">
           {{ savingPw ? 'Cambiando...' : 'Cambiar contraseña' }}
         </button>
@@ -106,14 +116,16 @@ const quinielas = ref([])
 const saving    = ref(false)
 const savingPw  = ref(false)
 const saveMsg   = ref('')
+const saveError = ref(false)
 const pwMsg     = ref('')
+const pwError   = ref(false)
 
 const editForm = ref({
   full_name: auth.user?.full_name || '',
   country:   auth.user?.country   || 'HN',
 })
 
-const pwForm = ref({ current: '', new: '' })
+const pwForm = ref({ current: '', new: '', confirm: '' })
 
 const userInitial = computed(() =>
   (auth.user?.username || 'U').charAt(0).toUpperCase()
@@ -131,36 +143,71 @@ onMounted(async () => {
 })
 
 async function saveProfile() {
-  saving.value = true
+  saveMsg.value   = ''
+  saveError.value = false
+  saving.value    = true
   try {
-    // TODO: endpoint PATCH /users/me cuando se implemente
-    saveMsg.value = '✓ Perfil actualizado'
-    setTimeout(() => { saveMsg.value = '' }, 2000)
+    const res = await api.patch('/auth/profile', {
+      full_name: editForm.value.full_name,
+      country:   editForm.value.country,
+    })
+    // Actualizar el store y localStorage con los datos nuevos
+    auth.user = { ...auth.user, ...res.data }
+    localStorage.setItem('user', JSON.stringify(auth.user))
+    saveMsg.value = '✓ Perfil actualizado correctamente'
+    setTimeout(() => { saveMsg.value = '' }, 3000)
+  } catch (e) {
+    saveError.value = true
+    saveMsg.value   = e.response?.data?.message || 'Error al actualizar el perfil'
   } finally {
     saving.value = false
   }
 }
 
 async function changePassword() {
-  if (!pwForm.value.current || !pwForm.value.new) return
+  pwMsg.value   = ''
+  pwError.value = false
+
+  if (!pwForm.value.current || !pwForm.value.new || !pwForm.value.confirm) {
+    pwError.value = true
+    pwMsg.value   = 'Completá todos los campos'
+    return
+  }
+  if (pwForm.value.new !== pwForm.value.confirm) {
+    pwError.value = true
+    pwMsg.value   = 'Las contraseñas nuevas no coinciden'
+    return
+  }
+  if (pwForm.value.new.length < 8) {
+    pwError.value = true
+    pwMsg.value   = 'La contraseña debe tener al menos 8 caracteres'
+    return
+  }
+
   savingPw.value = true
   try {
-    // TODO: endpoint PATCH /auth/change-password cuando se implemente
-    pwMsg.value = '✓ Contraseña actualizada'
-    pwForm.value = { current: '', new: '' }
-    setTimeout(() => { pwMsg.value = '' }, 2000)
+    await api.patch('/auth/change-password', {
+      current_password: pwForm.value.current,
+      new_password:     pwForm.value.new,
+    })
+    pwMsg.value  = '✓ Contraseña actualizada correctamente'
+    pwForm.value = { current: '', new: '', confirm: '' }
+    setTimeout(() => { pwMsg.value = '' }, 3000)
+  } catch (e) {
+    pwError.value = true
+    pwMsg.value   = e.response?.data?.message || 'Error al cambiar la contraseña'
   } finally {
     savingPw.value = false
   }
 }
 
 function countryFlag(c) {
-  const f = { HN:'🇭🇳', CR:'🇨🇷', GT:'🇬🇹', SV:'🇸🇻', NI:'🇳🇮', PA:'🇵🇦', BZ:'🇧🇿', MX:'🇲🇽', US:'🇺🇸' }
+  const f = { HN:'🇭🇳', CR:'🇨🇷', GT:'🇬🇹', SV:'🇸🇻', NI:'🇳🇮', PA:'🇵🇦', BZ:'🇧🇿', MX:'🇲🇽', CO:'🇨🇴', AR:'🇦🇷', BR:'🇧🇷', US:'🇺🇸', ES:'🇪🇸' }
   return f[c] || '🌎'
 }
 
 function countryName(c) {
-  const n = { HN:'Honduras', CR:'Costa Rica', GT:'Guatemala', SV:'El Salvador', NI:'Nicaragua', PA:'Panamá', BZ:'Belice', MX:'México', US:'USA' }
+  const n = { HN:'Honduras', CR:'Costa Rica', GT:'Guatemala', SV:'El Salvador', NI:'Nicaragua', PA:'Panamá', BZ:'Belice', MX:'México', CO:'Colombia', AR:'Argentina', BR:'Brasil', US:'USA', ES:'España' }
   return n[c] || c
 }
 </script>
