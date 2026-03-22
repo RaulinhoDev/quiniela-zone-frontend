@@ -5,7 +5,7 @@
         <h1 class="page-title">PARTIDOS</h1>
         <p class="page-sub">Gestión de partidos por jornada</p>
       </div>
-      <button class="btn btn-primary" @click="showModal = true">+ Nuevo Partido</button>
+      <button class="btn btn-primary" @click="abrirModal">+ Agregar Partidos</button>
     </div>
 
     <!-- Filtros -->
@@ -31,13 +31,14 @@
             <option value="">Todos</option>
             <option value="Apertura">Apertura</option>
             <option value="Clausura">Clausura</option>
+            <option value="Único">Único</option>
             <option value="Otro">Otro</option>
           </select>
         </div>
-        <div class="form-group" style="margin:0;flex:1">
+        <div class="form-group" style="margin:0;min-width:150px">
           <label>Jornada</label>
-          <select v-model="selectedJornada" @change="loadPartidos" :disabled="!jornadasFiltradas.length">
-            <option value="">Seleccioná jornada</option>
+          <select v-model="filtroJornada" @change="filtrarPorJornada" :disabled="!jornadasFiltradas.length">
+            <option value="">Todas</option>
             <option v-for="j in jornadasFiltradas" :key="j.id" :value="j.id">{{ j.name }}</option>
           </select>
         </div>
@@ -47,12 +48,12 @@
     <!-- Tabla -->
     <div class="card">
       <div v-if="loading" class="loading-state">Cargando partidos...</div>
-      <div v-else-if="partidos.length === 0" class="empty-state">
-        Seleccioná una jornada para ver sus partidos
+      <div v-else-if="partidosFiltrados.length === 0" class="empty-state">
+        Seleccioná una competencia para ver sus partidos
       </div>
       <div v-else>
         <div class="card-header">
-          <span class="total-badge">{{ partidos.length }} partidos</span>
+          <span class="total-badge">{{ partidosFiltrados.length }} partidos</span>
         </div>
         <div class="table-wrap">
           <table>
@@ -86,7 +87,7 @@
           </table>
         </div>
         <AppPaginator
-          :total="partidos.length"
+          :total="partidosFiltrados.length"
           :per-page="perPage"
           :current="currentPage"
           @change="currentPage = $event"
@@ -94,47 +95,74 @@
       </div>
     </div>
 
-    <!-- Modal nuevo partido -->
-    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-      <div class="modal">
+    <!-- Modal agregar partidos en lote -->
+    <div v-if="showModal" class="modal-overlay" @click.self="cerrarModal">
+      <div class="modal modal-lg">
         <div class="modal-header">
-          <span class="modal-title">NUEVO PARTIDO</span>
-          <button class="modal-close" @click="showModal = false">✕</button>
+          <span class="modal-title">AGREGAR PARTIDOS</span>
+          <button class="modal-close" @click="cerrarModal">✕</button>
         </div>
+
         <div class="form-group">
           <label>Competencia</label>
-          <select v-model="form.competition_id" @change="loadJornadasForm">
+          <select v-model="form.competition_id" @change="onFormCompChange">
             <option value="">Seleccioná competencia</option>
             <option v-for="c in competencias" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
         </div>
-        <div class="form-group">
+
+        <div class="form-group" v-if="form.competition_id">
+          <label>Temporada</label>
+          <select v-model="form.season" @change="onFormSeasonChange" :disabled="!temporadasForm.length">
+            <option value="">Seleccioná temporada</option>
+            <option v-for="t in temporadasForm" :key="t" :value="t">{{ t }}</option>
+          </select>
+        </div>
+
+        <div class="form-group" v-if="form.season">
+          <label>Torneo</label>
+          <select v-model="form.torneo" @change="onFormTorneoChange" :disabled="!torneosForm.length">
+            <option value="">Seleccioná torneo</option>
+            <option v-for="t in torneosForm" :key="t" :value="t">{{ t }}</option>
+          </select>
+        </div>
+
+        <div class="form-group" v-if="form.torneo">
           <label>Jornada</label>
           <select v-model="form.matchday_id" :disabled="!jornadasForm.length">
             <option value="">Seleccioná jornada</option>
             <option v-for="j in jornadasForm" :key="j.id" :value="j.id">{{ j.name }}</option>
           </select>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Equipo local</label>
-            <input v-model="form.home_team" placeholder="Ej: Olimpia" />
+
+        <div v-if="form.matchday_id" class="partidos-form">
+          <div class="partidos-form-header">
+            <span class="section-label">Partidos</span>
+            <button type="button" class="btn btn-secondary btn-sm" @click="agregarFila">
+              + Agregar partido
+            </button>
           </div>
-          <div class="form-group">
-            <label>Equipo visitante</label>
-            <input v-model="form.away_team" placeholder="Ej: Motagua" />
+          <div class="partido-fila-header">
+            <span>Local</span>
+            <span>Visitante</span>
+            <span>Fecha y hora</span>
+            <span></span>
+          </div>
+          <div v-for="(p, i) in listaPartidos" :key="i" class="partido-fila">
+            <input v-model="p.home_team" placeholder="Equipo local" />
+            <input v-model="p.away_team" placeholder="Equipo visitante" />
+            <input v-model="p.match_date" type="datetime-local" />
+            <button type="button" class="btn-remove" @click="removerFila(i)" :disabled="listaPartidos.length === 1">✕</button>
           </div>
         </div>
-        <div class="form-group">
-          <label>Fecha y hora del partido</label>
-          <input v-model="form.match_date" type="datetime-local" />
-        </div>
-        <div v-if="formError" class="alert alert-error">{{ formError }}</div>
+
+        <div v-if="formError"   class="alert alert-error">{{ formError }}</div>
         <div v-if="formSuccess" class="alert alert-success">{{ formSuccess }}</div>
+
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showModal = false">Cancelar</button>
-          <button class="btn btn-primary" @click="createPartido" :disabled="saving">
-            {{ saving ? 'Guardando...' : 'Crear Partido' }}
+          <button class="btn btn-secondary" @click="cerrarModal">Cancelar</button>
+          <button class="btn btn-primary" @click="guardarPartidos" :disabled="saving">
+            {{ saving ? 'Guardando...' : `Guardar ${listaPartidos.length} partido${listaPartidos.length > 1 ? 's' : ''}` }}
           </button>
         </div>
       </div>
@@ -152,11 +180,14 @@ const jornadas          = ref([])
 const jornadasFiltradas = ref([])
 const jornadasForm      = ref([])
 const temporadas        = ref([])
+const temporadasForm    = ref([])
+const torneosForm       = ref([])
 const partidos          = ref([])
+const partidosFiltrados = ref([])
 const selectedComp      = ref('')
-const selectedJornada   = ref('')
 const filtroTemporada   = ref('')
 const filtroTorneo      = ref('')
+const filtroJornada     = ref('')
 const loading           = ref(false)
 const showModal         = ref(false)
 const saving            = ref(false)
@@ -167,15 +198,18 @@ const perPage           = 15
 
 const form = ref({
   competition_id: '',
-  matchday_id: '',
-  home_team: '',
-  away_team: '',
-  match_date: ''
+  season:         '',
+  torneo:         '',
+  matchday_id:    '',
 })
+
+const listaPartidos = ref([
+  { home_team: '', away_team: '', match_date: '' }
+])
 
 const partidosPaginados = computed(() => {
   const start = (currentPage.value - 1) * perPage
-  return partidos.value.slice(start, start + perPage)
+  return partidosFiltrados.value.slice(start, start + perPage)
 })
 
 onMounted(async () => {
@@ -183,15 +217,51 @@ onMounted(async () => {
   competencias.value = res.data
 })
 
+function abrirModal() {
+  form.value = { competition_id: '', season: '', torneo: '', matchday_id: '' }
+  listaPartidos.value  = [{ home_team: '', away_team: '', match_date: '' }]
+  temporadasForm.value = []
+  torneosForm.value    = []
+  jornadasForm.value   = []
+  formError.value      = ''
+  formSuccess.value    = ''
+  showModal.value      = true
+}
+
+function cerrarModal() { showModal.value = false }
+function agregarFila() { listaPartidos.value.push({ home_team: '', away_team: '', match_date: '' }) }
+function removerFila(i) { if (listaPartidos.value.length > 1) listaPartidos.value.splice(i, 1) }
+
+async function onFormCompChange() {
+  form.value.season = form.value.torneo = form.value.matchday_id = ''
+  temporadasForm.value = torneosForm.value = jornadasForm.value = []
+  if (!form.value.competition_id) return
+  const res = await api.get(`/competitions/${form.value.competition_id}/temporadas`)
+  temporadasForm.value = res.data
+}
+
+async function onFormSeasonChange() {
+  form.value.torneo = form.value.matchday_id = ''
+  torneosForm.value = jornadasForm.value = []
+  if (!form.value.season) return
+  const res = await api.get(`/competitions/${form.value.competition_id}/torneos?season=${form.value.season}`)
+  torneosForm.value = res.data
+}
+
+async function onFormTorneoChange() {
+  form.value.matchday_id = ''
+  jornadasForm.value = []
+  if (!form.value.torneo) return
+  const res = await api.get(`/competitions/${form.value.competition_id}/matchdays`)
+  jornadasForm.value = res.data.filter(j =>
+    j.season === form.value.season && j.torneo === form.value.torneo
+  )
+}
+
 async function onCompChange() {
-  jornadas.value          = []
-  jornadasFiltradas.value = []
-  temporadas.value        = []
-  selectedJornada.value   = ''
-  filtroTemporada.value   = ''
-  filtroTorneo.value      = ''
-  partidos.value          = []
-  currentPage.value       = 1
+  jornadas.value = jornadasFiltradas.value = temporadas.value = partidos.value = partidosFiltrados.value = []
+  filtroTemporada.value = filtroTorneo.value = filtroJornada.value = ''
+  currentPage.value = 1
   if (!selectedComp.value) return
   const res = await api.get(`/competitions/${selectedComp.value}/matchdays`)
   jornadas.value = res.data
@@ -200,10 +270,11 @@ async function onCompChange() {
   filtrarJornadas()
 }
 
-function filtrarJornadas() {
-  selectedJornada.value = ''
-  partidos.value        = []
-  currentPage.value     = 1
+async function filtrarJornadas() {
+  partidos.value = partidosFiltrados.value = []
+  filtroJornada.value = ''
+  currentPage.value   = 1
+
   let resultado = jornadas.value
   if (filtroTemporada.value) {
     resultado = resultado.filter(j => j.season === filtroTemporada.value)
@@ -215,50 +286,56 @@ function filtrarJornadas() {
   } else if (filtroTorneo.value) {
     resultado = resultado.filter(j => j.name.startsWith(filtroTorneo.value))
   }
+
   jornadasFiltradas.value = resultado
-}
 
-async function loadJornadasForm() {
-  jornadasForm.value     = []
-  form.value.matchday_id = ''
-  if (!form.value.competition_id) return
-  const res = await api.get(`/competitions/${form.value.competition_id}/matchdays`)
-  jornadasForm.value = res.data
-}
-
-async function loadPartidos() {
-  if (!selectedJornada.value) { partidos.value = []; return }
-  loading.value     = true
-  currentPage.value = 1
-  try {
-    const res = await api.get(`/competitions/matchdays/${selectedJornada.value}`)
-    partidos.value = res.data.matches || []
-  } finally {
-    loading.value = false
+  if (resultado.length) {
+    loading.value = true
+    try {
+      const todos = await Promise.all(
+        resultado.map(j => api.get(`/competitions/matchdays/${j.id}`))
+      )
+      partidos.value = todos.flatMap(r => r.data.matches || [])
+        .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
+      partidosFiltrados.value = partidos.value
+    } finally {
+      loading.value = false
+    }
   }
 }
 
-async function createPartido() {
-  formError.value   = ''
-  formSuccess.value = ''
-  if (!form.value.matchday_id || !form.value.home_team || !form.value.away_team || !form.value.match_date) {
-    formError.value = 'Todos los campos son obligatorios'
+function filtrarPorJornada() {
+  currentPage.value = 1
+  if (!filtroJornada.value) {
+    partidosFiltrados.value = partidos.value
     return
   }
+  partidosFiltrados.value = partidos.value.filter(p =>
+    p.matchday_id === Number(filtroJornada.value)
+  )
+}
+
+async function guardarPartidos() {
+  formError.value = formSuccess.value = ''
+  if (!form.value.matchday_id) { formError.value = 'Seleccioná una jornada'; return }
+  const invalidos = listaPartidos.value.filter(p => !p.home_team || !p.away_team || !p.match_date)
+  if (invalidos.length) { formError.value = 'Completá todos los campos de cada partido'; return }
   saving.value = true
   try {
-    await api.post('/competitions/admin/match', {
-      matchday_id: form.value.matchday_id,
-      home_team:   form.value.home_team,
-      away_team:   form.value.away_team,
-      match_date:  form.value.match_date
-    })
-    formSuccess.value = 'Partido creado!'
-    await loadPartidos()
-    setTimeout(() => { showModal.value = false; formSuccess.value = '' }, 1500)
-    form.value = { competition_id: '', matchday_id: '', home_team: '', away_team: '', match_date: '' }
+    await Promise.all(
+      listaPartidos.value.map(p =>
+        api.post('/competitions/admin/match', {
+          matchday_id: form.value.matchday_id,
+          home_team:   p.home_team,
+          away_team:   p.away_team,
+          match_date:  p.match_date,
+        })
+      )
+    )
+    formSuccess.value = `✓ ${listaPartidos.value.length} partido${listaPartidos.value.length > 1 ? 's' : ''} creado${listaPartidos.value.length > 1 ? 's' : ''}`
+    setTimeout(() => cerrarModal(), 1200)
   } catch (e) {
-    formError.value = e.response?.data?.message || 'Error al crear el partido'
+    formError.value = e.response?.data?.message || 'Error al crear los partidos'
   } finally {
     saving.value = false
   }
@@ -268,15 +345,11 @@ function formatDateTime(d) {
   if (!d) return '—'
   return new Date(d).toLocaleString('es-HN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
-
 function statusLabel(s) {
-  const map = { SCHEDULED: 'Programado', LIVE: 'En curso', FINISHED: 'Finalizado', POSTPONED: 'Postpuesto', CANCELLED: 'Cancelado' }
-  return map[s] || s
+  return { SCHEDULED: 'Programado', LIVE: 'En curso', FINISHED: 'Finalizado', POSTPONED: 'Postpuesto', CANCELLED: 'Cancelado' }[s] || s
 }
-
 function statusBadge(s) {
-  const map = { SCHEDULED: 'badge badge-blue', LIVE: 'badge badge-green', FINISHED: 'badge badge-gray', POSTPONED: 'badge badge-yellow', CANCELLED: 'badge badge-red' }
-  return map[s] || 'badge badge-gray'
+  return { SCHEDULED: 'badge badge-blue', LIVE: 'badge badge-green', FINISHED: 'badge badge-gray', POSTPONED: 'badge badge-yellow', CANCELLED: 'badge badge-red' }[s] || 'badge badge-gray'
 }
 </script>
 
@@ -286,10 +359,37 @@ function statusBadge(s) {
 .page-sub    { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem; }
 .mb-1        { margin-bottom: 1rem; }
 .filter-row  { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; }
-.form-row    { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .loading-state, .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
 .score       { font-family: var(--font-display); font-size: 1.1rem; color: var(--accent); letter-spacing: 0.05em; }
 .text-muted  { color: var(--text-muted); }
 .card-header { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.75rem; }
 .total-badge { font-size: 0.78rem; color: var(--text-muted); }
+.modal-lg    { max-width: 700px; max-height: 90vh; overflow-y: auto; }
+
+.partidos-form { margin-top: 1rem; }
+.partidos-form-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.section-label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.partido-fila-header {
+  display: grid; grid-template-columns: 1fr 1fr 1.2fr 28px;
+  gap: 0.5rem; padding: 0 0 0.4rem;
+  font-size: 0.72rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border); margin-bottom: 0.5rem;
+}
+.partido-fila {
+  display: grid; grid-template-columns: 1fr 1fr 1.2fr 28px;
+  gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;
+}
+.partido-fila input { margin: 0; }
+
+.btn-remove {
+  width: 28px; height: 28px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-muted); cursor: pointer; font-size: 0.75rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.btn-remove:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+.btn-remove:disabled { opacity: 0.3; cursor: not-allowed; }
 </style>

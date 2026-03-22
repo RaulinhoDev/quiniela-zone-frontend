@@ -5,7 +5,7 @@
         <h1 class="page-title">JORNADAS</h1>
         <p class="page-sub">Gestión de jornadas por competencia</p>
       </div>
-      <button class="btn btn-primary" @click="showModal = true">+ Nueva Jornada</button>
+      <button class="btn btn-primary" @click="abrirModal">+ Nueva Jornada</button>
     </div>
 
     <!-- Filtros -->
@@ -31,6 +31,7 @@
             <option value="">Todos</option>
             <option value="Apertura">Apertura</option>
             <option value="Clausura">Clausura</option>
+            <option value="Único">Único</option>
             <option value="Otro">Otro</option>
           </select>
         </div>
@@ -52,9 +53,9 @@
                 <th>Jornada</th>
                 <th>Competencia</th>
                 <th>Temporada</th>
+                <th>Torneo</th>
                 <th>Fecha inicio</th>
                 <th>Estado</th>
-                <th>Partidos</th>
               </tr>
             </thead>
             <tbody>
@@ -63,13 +64,16 @@
                 <td><strong>{{ j.name }}</strong></td>
                 <td>{{ j.competition?.name || '—' }}</td>
                 <td>{{ j.season }}</td>
+                <td>
+                  <span v-if="j.torneo" class="badge badge-blue">{{ j.torneo }}</span>
+                  <span v-else class="text-muted">—</span>
+                </td>
                 <td>{{ formatDate(j.start_date) }}</td>
                 <td>
                   <span :class="j.is_finished ? 'badge badge-gray' : 'badge badge-green'">
                     {{ j.is_finished ? 'Finalizada' : 'Activa' }}
                   </span>
                 </td>
-                <td>{{ j.matches?.length ?? '—' }}</td>
               </tr>
             </tbody>
           </table>
@@ -84,28 +88,82 @@
     </div>
 
     <!-- Modal nueva jornada -->
-    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
+    <div v-if="showModal" class="modal-overlay" @click.self="cerrarModal">
       <div class="modal">
         <div class="modal-header">
           <span class="modal-title">NUEVA JORNADA</span>
-          <button class="modal-close" @click="showModal = false">✕</button>
+          <button class="modal-close" @click="cerrarModal">✕</button>
         </div>
+
+        <!-- Paso 1: Competencia -->
         <div class="form-group">
           <label>Competencia</label>
-          <select v-model="form.competition_id" required>
+          <select v-model="form.competition_id" @change="onFormCompChange" required>
             <option value="">Seleccioná una competencia</option>
             <option v-for="c in competencias" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>Nombre de la jornada</label>
-          <input v-model="form.name" placeholder="Ej: Clausura - 1, Apertura - Final" />
-        </div>
-        <div class="form-group">
+
+        <!-- Paso 2: Temporada -->
+        <div class="form-group" v-if="form.competition_id">
           <label>Temporada</label>
-          <input v-model="form.season" placeholder="Ej: 2024" />
+          <div v-if="loadingTemporadas" class="text-muted" style="font-size:0.85rem">Cargando...</div>
+          <div v-else>
+            <select v-model="form.season" @change="onSeasonChange">
+              <option value="">Seleccioná temporada</option>
+              <option v-for="t in temporadasForm" :key="t" :value="t">{{ t }}</option>
+              <option value="__nueva__">+ Nueva temporada</option>
+            </select>
+            <input
+              v-if="form.season === '__nueva__'"
+              v-model="form.season_nueva"
+              placeholder="Ej: 2025-2026"
+              style="margin-top:0.5rem"
+            />
+          </div>
         </div>
-        <div class="form-row">
+
+        <!-- Paso 3: Torneo -->
+        <div class="form-group" v-if="form.competition_id && temporadaSeleccionada">
+          <label>Torneo</label>
+          <div class="torneo-grid">
+            <button
+              v-for="t in tiposTorneo" :key="t.id"
+              type="button"
+              class="torneo-btn"
+              :class="{ active: form.torneo === t.id }"
+              @click="form.torneo = t.id"
+            >
+              {{ t.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Paso 4: Número de jornada -->
+        <div class="form-group" v-if="form.torneo">
+          <label>Número de jornada</label>
+          <div class="jornada-num-row">
+            <input
+              v-model.number="form.round_number"
+              type="number" min="1"
+              placeholder="Ej: 1"
+              style="flex:1"
+            />
+            <div class="nombre-preview" v-if="nombreGenerado">
+              → <strong>{{ nombreGenerado }}</strong>
+            </div>
+          </div>
+          <div class="form-hint">El nombre se genera automáticamente</div>
+        </div>
+
+        <!-- Paso 5: Nombre custom si es "Otro" -->
+        <div class="form-group" v-if="form.torneo === 'Otro'">
+          <label>Nombre de la jornada</label>
+          <input v-model="form.nombre_custom" placeholder="Ej: Final, Semifinal, Repechaje" />
+        </div>
+
+        <!-- Fechas -->
+        <div class="form-row" v-if="form.torneo">
           <div class="form-group">
             <label>Fecha inicio</label>
             <input v-model="form.start_date" type="date" />
@@ -115,10 +173,12 @@
             <input v-model="form.end_date" type="date" />
           </div>
         </div>
-        <div v-if="formError" class="alert alert-error">{{ formError }}</div>
+
+        <div v-if="formError"   class="alert alert-error">{{ formError }}</div>
         <div v-if="formSuccess" class="alert alert-success">{{ formSuccess }}</div>
+
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showModal = false">Cancelar</button>
+          <button class="btn btn-secondary" @click="cerrarModal">Cancelar</button>
           <button class="btn btn-primary" @click="createJornada" :disabled="saving">
             {{ saving ? 'Guardando...' : 'Crear Jornada' }}
           </button>
@@ -137,10 +197,12 @@ const competencias      = ref([])
 const jornadas          = ref([])
 const jornadasFiltradas = ref([])
 const temporadas        = ref([])
+const temporadasForm    = ref([])
 const selectedComp      = ref('')
 const filtroTemporada   = ref('')
 const filtroTorneo      = ref('')
 const loading           = ref(false)
+const loadingTemporadas = ref(false)
 const showModal         = ref(false)
 const saving            = ref(false)
 const formError         = ref('')
@@ -148,17 +210,39 @@ const formSuccess       = ref('')
 const currentPage       = ref(1)
 const perPage           = 10
 
-const jornadasPaginadas = computed(() => {
-  const start = (currentPage.value - 1) * perPage
-  return jornadasFiltradas.value.slice(start, start + perPage)
-})
+const tiposTorneo = [
+  { id: 'Apertura', label: 'Apertura' },
+  { id: 'Clausura', label: 'Clausura' },
+  { id: 'Único',    label: 'Torneo único' },
+  { id: 'Otro',     label: 'Otro' },
+]
 
 const form = ref({
   competition_id: '',
-  name: '',
-  season: '2024',
-  start_date: '',
-  end_date: ''
+  season:         '',
+  season_nueva:   '',
+  torneo:         '',
+  round_number:   null,
+  nombre_custom:  '',
+  start_date:     '',
+  end_date:       '',
+})
+
+const temporadaSeleccionada = computed(() => {
+  if (form.value.season === '__nueva__') return form.value.season_nueva
+  return form.value.season
+})
+
+const nombreGenerado = computed(() => {
+  if (!form.value.torneo || !form.value.round_number) return ''
+  if (form.value.torneo === 'Único') return `Jornada ${form.value.round_number}`
+  if (form.value.torneo === 'Otro')  return form.value.nombre_custom
+  return `${form.value.torneo} - ${form.value.round_number}`
+})
+
+const jornadasPaginadas = computed(() => {
+  const start = (currentPage.value - 1) * perPage
+  return jornadasFiltradas.value.slice(start, start + perPage)
 })
 
 onMounted(async () => {
@@ -166,6 +250,49 @@ onMounted(async () => {
   competencias.value = res.data
   await loadJornadas()
 })
+
+function abrirModal() {
+  form.value = {
+    competition_id: '',
+    season:         '',
+    season_nueva:   '',
+    torneo:         '',
+    round_number:   null,
+    nombre_custom:  '',
+    start_date:     '',
+    end_date:       '',
+  }
+  temporadasForm.value = []
+  formError.value      = ''
+  formSuccess.value    = ''
+  showModal.value      = true
+}
+
+function cerrarModal() {
+  showModal.value = false
+}
+
+async function onFormCompChange() {
+  form.value.season       = ''
+  form.value.season_nueva = ''
+  form.value.torneo       = ''
+  form.value.round_number = null
+  temporadasForm.value    = []
+
+  if (!form.value.competition_id) return
+  loadingTemporadas.value = true
+  try {
+    const res = await api.get(`/competitions/${form.value.competition_id}/temporadas`)
+    temporadasForm.value = res.data
+  } finally {
+    loadingTemporadas.value = false
+  }
+}
+
+function onSeasonChange() {
+  form.value.torneo       = ''
+  form.value.round_number = null
+}
 
 async function onCompChange() {
   filtroTemporada.value = ''
@@ -205,8 +332,10 @@ function filtrarJornadas() {
   }
   if (filtroTorneo.value === 'Otro') {
     resultado = resultado.filter(j =>
-      !j.name.startsWith('Apertura') && !j.name.startsWith('Clausura')
+      !j.name.startsWith('Apertura') && !j.name.startsWith('Clausura') && !j.name.startsWith('Jornada')
     )
+  } else if (filtroTorneo.value === 'Único') {
+    resultado = resultado.filter(j => j.name.startsWith('Jornada'))
   } else if (filtroTorneo.value) {
     resultado = resultado.filter(j => j.name.startsWith(filtroTorneo.value))
   }
@@ -217,17 +346,54 @@ function filtrarJornadas() {
 async function createJornada() {
   formError.value   = ''
   formSuccess.value = ''
-  if (!form.value.competition_id || !form.value.name || !form.value.season) {
-    formError.value = 'Competencia, nombre y temporada son obligatorios'
-    return
-  }
+
+  const season = temporadaSeleccionada.value
+  if (!form.value.competition_id) { formError.value = 'Seleccioná una competencia'; return }
+  if (!season)                    { formError.value = 'Ingresá la temporada'; return }
+  if (!form.value.torneo)         { formError.value = 'Seleccioná el torneo'; return }
+  if (!form.value.round_number)   { formError.value = 'Ingresá el número de jornada'; return }
+
+  const nombre = form.value.torneo === 'Otro'
+    ? form.value.nombre_custom
+    : nombreGenerado.value
+
+  if (!nombre) { formError.value = 'El nombre es obligatorio'; return }
+
   saving.value = true
   try {
-    await api.post('/competitions/admin/matchday', form.value)
-    formSuccess.value = 'Jornada creada exitosamente!'
+    await api.post('/competitions/admin/matchday', {
+      competition_id: form.value.competition_id,
+      name:           nombre,
+      season,
+      torneo:         form.value.torneo,
+      round_number:   form.value.round_number,
+      start_date:     form.value.start_date || null,
+      end_date:       form.value.end_date   || null,
+    })
+
+    formSuccess.value = `✓ "${nombre}" creada`
+
+    // Actualizar lista de temporadas del form
+    if (!temporadasForm.value.includes(season)) {
+      temporadasForm.value = [season, ...temporadasForm.value]
+    }
+    // Si era nueva, cambiar a selector normal
+    if (form.value.season === '__nueva__') {
+      form.value.season       = season
+      form.value.season_nueva = ''
+    }
+
     await loadJornadas()
-    setTimeout(() => { showModal.value = false; formSuccess.value = '' }, 1500)
-    form.value = { competition_id: '', name: '', season: '2024', start_date: '', end_date: '' }
+
+    setTimeout(() => {
+      // Resetear solo número, fechas y nombre custom
+      form.value.round_number  = null
+      form.value.start_date    = ''
+      form.value.end_date      = ''
+      form.value.nombre_custom = ''
+      formSuccess.value        = ''
+      showModal.value          = false
+    }, 1200)
   } catch (e) {
     formError.value = e.response?.data?.message || 'Error al crear la jornada'
   } finally {
@@ -249,4 +415,20 @@ function formatDate(d) {
 .filter-row  { display: flex; gap: 1rem; align-items: flex-end; }
 .form-row    { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .loading-state, .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
+.text-muted  { color: var(--text-muted); }
+
+.torneo-grid { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.torneo-btn {
+  flex: 1; min-width: 80px; padding: 0.6rem 0.5rem;
+  border-radius: var(--radius); border: 1px solid var(--border);
+  background: var(--bg-surface); cursor: pointer;
+  color: var(--text-secondary); font-family: var(--font-body);
+  font-size: 0.85rem; font-weight: 500; transition: all 0.15s;
+}
+.torneo-btn:hover  { border-color: var(--border-light); color: var(--text-primary); }
+.torneo-btn.active { border-color: var(--accent); background: var(--accent-glow); color: var(--accent); }
+
+.jornada-num-row { display: flex; align-items: center; gap: 0.75rem; }
+.nombre-preview  { font-size: 0.88rem; color: var(--text-secondary); white-space: nowrap; }
+.form-hint       { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem; }
 </style>
