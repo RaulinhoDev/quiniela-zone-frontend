@@ -10,74 +10,113 @@
         <button class="btn btn-secondary" @click="showJoinModal = true">
           Unirse con código
         </button>
-        <button class="btn btn-primary" @click="abrirModalCrear">
-          + Nueva quiniela
-        </button>
+        <div class="crear-btn-wrapper" :title="!puedeCrear ? 'Plan gratuito: máximo 1 quiniela. Actualizá a Premium.' : ''">
+          <button class="btn btn-primary" @click="abrirModalCrear" :disabled="!puedeCrear">
+            + Nueva quiniela
+          </button>
+        </div>
       </div>
+    </div>
+
+    <!-- Banner plan gratuito -->
+    <div v-if="!auth.isPremium && !auth.user?.is_premium && limites" class="free-banner">
+      <div class="free-banner-text">
+        <strong>Plan gratuito</strong> —
+        {{ limites.quinielas.creadas }}/{{ limites.quinielas.limite }} quiniela{{ limites.quinielas.limite !== 1 ? 's' : '' }} creada{{ limites.quinielas.limite !== 1 ? 's' : '' }} ·
+        máx {{ limites.participantes.limite_por_quiniela }} participantes por quiniela
+      </div>
+      <router-link to="/app/premium" class="btn btn-primary btn-sm">Actualizar a Premium</router-link>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="empty-state">Cargando...</div>
 
-    <!-- Sin quinielas -->
-    <div v-else-if="!quinielas.length" class="empty-box">
-      <div class="empty-icon">⚽</div>
-      <h2 class="empty-title">Todavía no tenés quinielas</h2>
-      <p class="empty-desc">Creá la tuya o unite a una con el código que te mandaron</p>
-      <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem">
-        <button class="btn btn-secondary" @click="showJoinModal = true">Unirse con código</button>
-        <button class="btn btn-primary" @click="abrirModalCrear">Crear quiniela</button>
+    <template v-else>
+      <!-- Tabs de filtro -->
+      <div v-if="quinielas.length" class="tabs">
+        <button
+          v-for="t in tabs" :key="t.key"
+          class="tab-btn"
+          :class="{ active: filtro === t.key }"
+          @click="filtro = t.key"
+        >
+          {{ t.label }}
+          <span class="tab-count">{{ t.count }}</span>
+        </button>
       </div>
-    </div>
 
-    <!-- Lista de quinielas -->
-    <div v-else class="quinielas-grid">
-      <div
-        v-for="p in quinielas" :key="p.id"
-        class="q-card card"
-        @click="irAQuiniela(p.quiniela?.id)"
-      >
-        <div class="q-card-top">
-          <div>
-            <div class="q-name">{{ p.quiniela?.name }}</div>
-            <div class="q-comp">{{ p.quiniela?.competition?.name }}</div>
-          </div>
-          <span :class="statusBadge(p.quiniela?.status)">
-            {{ statusLabel(p.quiniela?.status) }}
-          </span>
-        </div>
-
-        <div class="q-stats">
-          <div class="q-stat">
-            <span class="q-stat-val">{{ p.total_points }}</span>
-            <span class="q-stat-lbl">Mis puntos</span>
-          </div>
-          <div class="q-stat">
-            <span class="q-stat-val">{{ p.rank || '—' }}</span>
-            <span class="q-stat-lbl">Mi posición</span>
-          </div>
-          <div class="q-stat">
-            <span class="q-stat-val">{{ p.jornadas_jugadas }}</span>
-            <span class="q-stat-lbl">Jornadas</span>
-          </div>
-        </div>
-
-        <div class="q-card-footer">
-          <span class="q-owner">
-            {{ p.quiniela?.owner?.username === auth.user?.username ? '👑 Organizador' : `Org: ${p.quiniela?.owner?.username}` }}
-          </span>
-          <span class="q-code">{{ p.quiniela?.invite_code }}</span>
+      <!-- Sin quinielas (primera vez) -->
+      <div v-if="!quinielas.length" class="empty-box">
+        <div class="empty-icon">⚽</div>
+        <h2 class="empty-title">Todavía no tenés quinielas</h2>
+        <p class="empty-desc">Creá la tuya o unite a una con el código que te mandaron</p>
+        <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem">
+          <button class="btn btn-secondary" @click="showJoinModal = true">Unirse con código</button>
+          <button class="btn btn-primary" @click="abrirModalCrear">Crear quiniela</button>
         </div>
       </div>
-    </div>
+
+      <!-- Sin resultados en el filtro activo -->
+      <div v-else-if="!quinielasFiltradas.length" class="empty-filter">
+        No tenés quinielas {{ tabs.find(t => t.key === filtro)?.label?.toLowerCase() }}
+      </div>
+
+      <!-- Lista de quinielas -->
+      <div v-else class="quinielas-grid">
+        <div
+          v-for="p in quinielasFiltradas" :key="p.id"
+          class="q-card card"
+          :class="`q-card--${(p.quiniela?.status || '').toLowerCase()}`"
+          @click="irAQuiniela(p.quiniela?.id)"
+        >
+          <!-- Cabecera -->
+          <div class="q-card-top">
+            <div class="q-info">
+              <div class="q-name">{{ p.quiniela?.name }}</div>
+              <div class="q-comp">
+                {{ p.quiniela?.competition?.name }}
+                <span v-if="p.quiniela?.owner?.username === auth.user?.username" class="q-org-badge">👑 Organizador</span>
+              </div>
+            </div>
+            <span :class="statusBadge(p.quiniela?.status)">{{ statusLabel(p.quiniela?.status) }}</span>
+          </div>
+
+          <!-- Stats -->
+          <div class="q-stats">
+            <div class="q-stat">
+              <span class="q-stat-val accent">{{ p.total_points }}</span>
+              <span class="q-stat-lbl">Puntos</span>
+            </div>
+            <div class="q-stat">
+              <span class="q-stat-val">
+                <span v-if="p.rank === 1">🥇</span>
+                <span v-else-if="p.rank === 2">🥈</span>
+                <span v-else-if="p.rank === 3">🥉</span>
+                <span v-else>{{ p.rank || '—' }}</span>
+              </span>
+              <span class="q-stat-lbl">Posición</span>
+            </div>
+            <div class="q-stat">
+              <span class="q-stat-val">{{ p.exact_scores ?? 0 }}</span>
+              <span class="q-stat-lbl">Exactos</span>
+            </div>
+            <div class="q-stat">
+              <span class="q-stat-val">{{ p.correct_winners ?? 0 }}</span>
+              <span class="q-stat-lbl">Ganadores</span>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="q-card-footer">
+            <span class="q-jornadas">{{ p.jornadas_jugadas }} jornada{{ p.jornadas_jugadas !== 1 ? 's' : '' }} jugada{{ p.jornadas_jugadas !== 1 ? 's' : '' }}</span>
+            <span class="q-code">{{ p.quiniela?.invite_code }}</span>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <!-- Modal crear quiniela -->
-    <div v-if="showCreateModal" class="modal-overlay" @click.self="cerrarModalCrear">
-      <div class="modal modal-lg">
-        <div class="modal-header">
-          <span class="modal-title">NUEVA QUINIELA</span>
-          <button class="modal-close" @click="cerrarModalCrear">✕</button>
-        </div>
+    <AppModal v-model="showCreateModal" title="NUEVA QUINIELA" size="lg" maxWidth="560px">
 
         <!-- Paso 1: Nombre -->
         <div class="form-group">
@@ -181,16 +220,10 @@
             {{ creating ? 'Creando...' : 'Crear Quiniela' }}
           </button>
         </div>
-      </div>
-    </div>
+    </AppModal>
 
     <!-- Modal unirse -->
-    <div v-if="showJoinModal" class="modal-overlay" @click.self="showJoinModal = false">
-      <div class="modal">
-        <div class="modal-header">
-          <span class="modal-title">UNIRSE A QUINIELA</span>
-          <button class="modal-close" @click="showJoinModal = false">✕</button>
-        </div>
+    <AppModal v-model="showJoinModal" title="UNIRSE A QUINIELA">
         <p style="color:var(--text-secondary);margin-bottom:1.5rem;font-size:0.9rem">
           Ingresá el código que te compartió el organizador
         </p>
@@ -211,8 +244,7 @@
             {{ joining ? 'Uniéndose...' : 'Unirse' }}
           </button>
         </div>
-      </div>
-    </div>
+    </AppModal>
   </div>
 </template>
 
@@ -221,6 +253,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
+import AppModal from '@/components/AppModal.vue'
 import {
   CONFEDERACIONES,
   filtrarPorConfederacion,
@@ -236,6 +269,7 @@ const competencias    = ref([])
 const matchdays       = ref([]) // jornadas de la competencia seleccionada
 const temporadas      = ref([])
 const torneos         = ref([])
+const limites         = ref(null)
 const loading         = ref(true)
 const showCreateModal = ref(false)
 const showJoinModal   = ref(false)
@@ -246,6 +280,26 @@ const joinError       = ref('')
 const joinSuccess     = ref('')
 const createError     = ref('')
 const createSuccess   = ref('')
+
+const filtro = ref('todas')
+
+const puedeCrear = computed(() => {
+  if (auth.isPremium) return true
+  if (!limites.value) return true // aún cargando, no bloquear
+  return limites.value.quinielas.creadas < limites.value.quinielas.limite
+})
+
+const tabs = computed(() => [
+  { key: 'todas',      label: 'Todas',      count: quinielas.value.length },
+  { key: 'activa',     label: 'Activas',    count: quinielas.value.filter(p => p.quiniela?.status === 'ACTIVA').length },
+  { key: 'esperando',  label: 'Esperando',  count: quinielas.value.filter(p => p.quiniela?.status === 'ESPERANDO').length },
+  { key: 'finalizada', label: 'Finalizadas',count: quinielas.value.filter(p => p.quiniela?.status === 'FINALIZADA').length },
+].filter(t => t.key === 'todas' || t.count > 0))
+
+const quinielasFiltradas = computed(() => {
+  if (filtro.value === 'todas') return quinielas.value
+  return quinielas.value.filter(p => (p.quiniela?.status || '').toLowerCase() === filtro.value)
+})
 
 const confederaciones = CONFEDERACIONES
 
@@ -267,12 +321,14 @@ const competenciasFiltradas = computed(() =>
 
 onMounted(async () => {
   try {
-    const [misRes, compRes] = await Promise.all([
+    const [misRes, compRes, limitesRes] = await Promise.all([
       api.get('/quinielas/mis/quinielas'),
       api.get('/competitions'),
+      api.get('/quinielas/mis/limites'),
     ])
     quinielas.value    = misRes.data
     competencias.value = compRes.data
+    limites.value      = limitesRes.data
   } finally {
     loading.value = false
   }
@@ -348,6 +404,9 @@ async function createQuiniela() {
   if (!createForm.value.season) {
     createError.value = 'Seleccioná una temporada'; return
   }
+  if (!createForm.value.torneo) {
+    createError.value = 'Seleccioná un torneo'; return
+  }
 
   creating.value = true
   try {
@@ -355,6 +414,7 @@ async function createQuiniela() {
       name:           createForm.value.name,
       competition_id: createForm.value.competition_id,
       season:         createForm.value.season,
+      torneo:         createForm.value.torneo,
       description:    createForm.value.description,
       is_paid:        createForm.value.is_paid,
       entry_fee:      createForm.value.entry_fee,
@@ -363,8 +423,12 @@ async function createQuiniela() {
 
     const res = await api.post('/quinielas', payload)
     createSuccess.value = `✓ Quiniela creada. Código: ${res.data.invite_code}`
-    const misRes = await api.get('/quinielas/mis/quinielas')
+    const [misRes, limitesRes] = await Promise.all([
+      api.get('/quinielas/mis/quinielas'),
+      api.get('/quinielas/mis/limites'),
+    ])
     quinielas.value = misRes.data
+    limites.value   = limitesRes.data
     setTimeout(() => {
       cerrarModalCrear()
       router.push(`/app/quinielas/${res.data.id}`)
@@ -422,32 +486,59 @@ function statusBadge(s) {
 .empty-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; }
 .empty-desc  { color: var(--text-muted); font-size: 0.9rem; }
 
-.quinielas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+/* ── Tabs ──────────────────────────────────────────────────── */
+.tabs { display: flex; gap: 0.35rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.tab-btn {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 1rem; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-secondary); font-family: var(--font-body);
+  font-size: 0.82rem; font-weight: 500; cursor: pointer;
+  transition: all 0.15s;
+}
+.tab-btn:hover { border-color: var(--border-light); color: var(--text-primary); }
+.tab-btn.active { background: var(--accent-glow); border-color: rgba(0,229,160,0.4); color: var(--accent); }
+.tab-count {
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 0.05rem 0.45rem; font-size: 0.72rem; color: var(--text-muted);
+}
+.tab-btn.active .tab-count { background: rgba(0,229,160,0.15); color: var(--accent); }
+
+.empty-filter { text-align: center; padding: 3rem; color: var(--text-muted); font-size: 0.9rem; }
+
+/* ── Cards ─────────────────────────────────────────────────── */
+.quinielas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem; }
 
 .q-card {
   cursor: pointer; transition: border-color 0.15s, transform 0.15s;
   display: flex; flex-direction: column; gap: 1rem;
+  border-left: 3px solid transparent;
 }
 .q-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+.q-card--activa    { border-left-color: var(--accent); }
+.q-card--esperando { border-left-color: var(--accent-2); }
+.q-card--finalizada{ border-left-color: var(--border-light); }
+
 .q-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
-.q-name  { font-weight: 600; color: var(--text-primary); font-size: 0.95rem; line-height: 1.3; }
-.q-comp  { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; }
+.q-info { flex: 1; min-width: 0; }
+.q-name { font-weight: 600; color: var(--text-primary); font-size: 0.95rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-comp { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.q-org-badge { font-size: 0.7rem; color: #f5a623; }
 
 .q-stats {
   display: flex; background: var(--bg-surface);
   border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border);
 }
-.q-stat { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0.65rem 0.25rem; border-right: 1px solid var(--border); }
+.q-stat { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0.6rem 0.25rem; border-right: 1px solid var(--border); }
 .q-stat:last-child { border-right: none; }
-.q-stat-val { font-family: var(--font-display); font-size: 1.3rem; color: var(--accent); }
-.q-stat-lbl { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.1rem; }
+.q-stat-val { font-family: var(--font-display); font-size: 1.2rem; color: var(--text-primary); line-height: 1; }
+.q-stat-val.accent { color: var(--accent); }
+.q-stat-lbl { font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.15rem; }
 
 .q-card-footer { display: flex; align-items: center; justify-content: space-between; }
-.q-owner { font-size: 0.78rem; color: var(--text-muted); }
-.q-code  { font-family: var(--font-display); font-size: 0.9rem; color: var(--accent-2); letter-spacing: 0.08em; }
+.q-jornadas { font-size: 0.75rem; color: var(--text-muted); }
+.q-code { font-family: var(--font-display); font-size: 0.88rem; color: var(--accent-2); letter-spacing: 0.08em; }
 
-/* Modal grande */
-.modal-lg { max-width: 560px; }
 
 /* Confederaciones */
 .conf-grid {
@@ -483,4 +574,15 @@ function statusBadge(s) {
 .scoring-section { background: var(--bg-surface); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; }
 .scoring-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.free-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  background: rgba(255,165,2,0.07); border: 1px solid rgba(255,165,2,0.25);
+  border-radius: var(--radius); padding: 0.75rem 1.25rem; margin-bottom: 1.5rem;
+  font-size: 0.88rem; color: var(--text-secondary);
+}
+.free-banner strong { color: var(--warning); }
+.crear-btn-wrapper button:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-sm { padding: 0.35rem 0.85rem; font-size: 0.8rem; }
 </style>

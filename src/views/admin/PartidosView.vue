@@ -96,12 +96,7 @@
     </div>
 
     <!-- Modal agregar partidos en lote -->
-    <div v-if="showModal" class="modal-overlay" @click.self="cerrarModal">
-      <div class="modal modal-lg">
-        <div class="modal-header">
-          <span class="modal-title">AGREGAR PARTIDOS</span>
-          <button class="modal-close" @click="cerrarModal">✕</button>
-        </div>
+    <AppModal v-model="showModal" title="AGREGAR PARTIDOS" size="lg" maxWidth="700px">
 
         <div class="form-group">
           <label>Competencia</label>
@@ -165,14 +160,14 @@
             {{ saving ? 'Guardando...' : `Guardar ${listaPartidos.length} partido${listaPartidos.length > 1 ? 's' : ''}` }}
           </button>
         </div>
-      </div>
-    </div>
+    </AppModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
+import AppModal from '@/components/AppModal.vue'
 import AppPaginator from '@/components/AppPaginator.vue'
 
 const competencias      = ref([])
@@ -364,7 +359,6 @@ function statusBadge(s) {
 .text-muted  { color: var(--text-muted); }
 .card-header { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 0.75rem; }
 .total-badge { font-size: 0.78rem; color: var(--text-muted); }
-.modal-lg    { max-width: 700px; max-height: 90vh; overflow-y: auto; }
 
 .partidos-form { margin-top: 1rem; }
 .partidos-form-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }

@@ -88,12 +88,7 @@
     </div>
 
     <!-- Modal nueva jornada -->
-    <div v-if="showModal" class="modal-overlay" @click.self="cerrarModal">
-      <div class="modal">
-        <div class="modal-header">
-          <span class="modal-title">NUEVA JORNADA</span>
-          <button class="modal-close" @click="cerrarModal">✕</button>
-        </div>
+    <AppModal v-model="showModal" title="NUEVA JORNADA">
 
         <!-- Paso 1: Competencia -->
         <div class="form-group">
@@ -183,8 +178,7 @@
             {{ saving ? 'Guardando...' : 'Crear Jornada' }}
           </button>
         </div>
-      </div>
-    </div>
+    </AppModal>
   </div>
 </template>
 
@@ -192,6 +186,7 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import AppPaginator from '@/components/AppPaginator.vue'
+import AppModal from '@/components/AppModal.vue'
 
 const competencias      = ref([])
 const jornadas          = ref([])

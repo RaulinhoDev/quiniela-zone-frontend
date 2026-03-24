@@ -100,12 +100,7 @@
     </div>
 
     <!-- Modal de sync rápido -->
-    <div v-if="showQuickModal" class="modal-overlay" @click.self="showQuickModal = false">
-      <div class="modal">
-        <div class="modal-header">
-          <span class="modal-title">SYNC RÁPIDO</span>
-          <button class="modal-close" @click="showQuickModal = false">✕</button>
-        </div>
+    <AppModal v-model="showQuickModal" title="SYNC RÁPIDO">
         <p style="color:var(--text-secondary);margin-bottom:1rem">
           Sincronizar <strong style="color:var(--text-primary)">{{ quickComp?.name }}</strong>
         </p>
@@ -122,8 +117,7 @@
             {{ syncing ? 'Sincronizando...' : 'Sincronizar' }}
           </button>
         </div>
-      </div>
-    </div>
+    </AppModal>
   </div>
 </template>
 
@@ -131,6 +125,7 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import AppPaginator from '@/components/AppPaginator.vue'
+import AppModal from '@/components/AppModal.vue'
 
 const competencias        = ref([])
 const competenciasFiltradas = ref([])
