@@ -9,6 +9,10 @@
         <div class="perfil-name">{{ auth.user?.full_name || auth.user?.username }}</div>
         <div class="perfil-username">@{{ auth.user?.username }}</div>
         <div class="perfil-country">{{ countryFlag(auth.user?.country) }} {{ countryName(auth.user?.country) }}</div>
+        <div v-if="auth.user?.is_premium" class="perfil-premium">Premium</div>
+        <router-link v-else to="/app/premium" class="perfil-upgrade">
+          Actualizar a Premium
+        </router-link>
 
         <div class="divider"></div>
 
@@ -19,7 +23,7 @@
           </div>
           <div class="p-stat p-stat--gold">
             <span class="p-stat-val">{{ trofeos.length }}</span>
-            <span class="p-stat-lbl">🏆 Títulos</span>
+            <span class="p-stat-lbl">Títulos</span>
           </div>
         </div>
 
@@ -47,7 +51,7 @@
                 :title="`${t.name} · ${t.competition} ${t.season}`"
               >
                 <div class="trofeo-glow"></div>
-                <div class="trofeo-emoji">🏆</div>
+                <div class="trofeo-emoji"></div>
                 <div class="trofeo-spark s1"></div>
                 <div class="trofeo-spark s2"></div>
                 <div class="trofeo-spark s3"></div>
@@ -68,7 +72,7 @@
                 :title="`${t.name} · ${t.competition} ${t.season}`"
               >
                 <div class="trofeo-glow"></div>
-                <div class="trofeo-emoji">🏆</div>
+                <div class="trofeo-emoji"></div>
                 <div class="trofeo-spark s1"></div>
                 <div class="trofeo-spark s2"></div>
                 <div class="trofeo-spark s3"></div>
@@ -291,6 +295,22 @@ function countryName(c) {
 .perfil-username{ color: var(--text-muted); font-size: 0.85rem; margin: 0.2rem 0; }
 .perfil-country { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem; }
 
+.perfil-premium {
+  display: inline-block; margin-top: 0.6rem;
+  background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.35);
+  color: var(--accent); font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.25rem 0.8rem; border-radius: 999px;
+}
+.perfil-upgrade {
+  display: inline-block; margin-top: 0.6rem;
+  font-size: 0.78rem; color: var(--text-muted);
+  text-decoration: none; font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  transition: color 0.15s, border-color 0.15s;
+}
+.perfil-upgrade:hover { color: var(--accent); border-color: var(--accent); }
+
 .perfil-stats {
   display: flex; gap: 0; width: 100%;
   background: var(--bg-surface); border-radius: var(--radius);
@@ -372,7 +392,9 @@ function countryName(c) {
 }
 
 .trofeo-emoji {
-  font-size: 2.2rem; line-height: 1;
+  width: 2rem; height: 2rem;
+  background: linear-gradient(135deg, #f5a623, #f0c040);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
   filter: drop-shadow(0 0 6px rgba(245,166,35,0.7));
   animation: trofeo-float 3s ease-in-out infinite;
 }

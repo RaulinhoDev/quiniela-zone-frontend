@@ -3,13 +3,12 @@
     <!-- Header -->
     <div class="dash-header">
       <div>
-        <h1 class="dash-title">Hola, {{ auth.user?.full_name || auth.user?.username }} 👋</h1>
+        <h1 class="dash-title">Hola, {{ auth.user?.full_name || auth.user?.username }}</h1>
         <p class="dash-sub">Tus quinielas activas</p>
       </div>
       <div class="dash-actions">
-        <button class="btn btn-secondary" @click="showJoinModal = true">
-          Unirse con código
-        </button>
+        <router-link to="/app/explorar" class="btn btn-secondary">Explorar públicas</router-link>
+        <button class="btn btn-secondary" @click="showJoinModal = true">Unirse con código</button>
         <div class="crear-btn-wrapper" :title="!puedeCrear ? 'Plan gratuito: máximo 1 quiniela. Actualizá a Premium.' : ''">
           <button class="btn btn-primary" @click="abrirModalCrear" :disabled="!puedeCrear">
             + Nueva quiniela
@@ -47,7 +46,7 @@
 
       <!-- Sin quinielas (primera vez) -->
       <div v-if="!quinielas.length" class="empty-box">
-        <div class="empty-icon">⚽</div>
+        <div class="empty-icon"></div>
         <h2 class="empty-title">Todavía no tenés quinielas</h2>
         <p class="empty-desc">Creá la tuya o unite a una con el código que te mandaron</p>
         <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem">
@@ -75,7 +74,7 @@
               <div class="q-name">{{ p.quiniela?.name }}</div>
               <div class="q-comp">
                 {{ p.quiniela?.competition?.name }}
-                <span v-if="p.quiniela?.owner?.username === auth.user?.username" class="q-org-badge">👑 Organizador</span>
+                <span v-if="p.quiniela?.owner?.username === auth.user?.username" class="q-org-badge">Organizador</span>
               </div>
             </div>
             <span :class="statusBadge(p.quiniela?.status)">{{ statusLabel(p.quiniela?.status) }}</span>
@@ -89,10 +88,7 @@
             </div>
             <div class="q-stat">
               <span class="q-stat-val">
-                <span v-if="p.rank === 1">🥇</span>
-                <span v-else-if="p.rank === 2">🥈</span>
-                <span v-else-if="p.rank === 3">🥉</span>
-                <span v-else>{{ p.rank || '—' }}</span>
+                {{ p.rank || '—' }}
               </span>
               <span class="q-stat-lbl">Posición</span>
             </div>
@@ -183,6 +179,36 @@
         <div class="form-group">
           <label>Descripción <span class="optional">opcional</span></label>
           <input v-model="createForm.description" placeholder="Ej: La quiniela del grupo del trabajo" />
+        </div>
+
+        <!-- Visibilidad: pública / privada -->
+        <div class="visibility-row">
+          <div class="visibility-opts">
+            <button
+              type="button"
+              class="vis-btn"
+              :class="{ active: !createForm.is_public }"
+              @click="createForm.is_public = false"
+            >
+              <span class="vis-icon vis-icon--lock"></span>
+              <span class="vis-label">Privada</span>
+              <span class="vis-desc">Solo con código o link</span>
+            </button>
+            <button
+              type="button"
+              class="vis-btn"
+              :class="{ active: createForm.is_public, disabled: !auth.user?.is_premium }"
+              @click="createForm.is_public = auth.user?.is_premium ? true : false"
+              :title="!auth.user?.is_premium ? 'Solo disponible en Premium' : ''"
+            >
+              <span class="vis-icon vis-icon--globe"></span>
+              <span class="vis-label">
+                Pública
+                <span v-if="!auth.user?.is_premium" class="vis-premium-tag">Premium</span>
+              </span>
+              <span class="vis-desc">Aparece en el directorio</span>
+            </button>
+          </div>
         </div>
 
         <!-- Quiniela de pago -->
@@ -310,6 +336,7 @@ const createForm = ref({
   season:         '',
   torneo:         '',
   description:    '',
+  is_public:      false,
   is_paid:        false,
   entry_fee:      0,
   scoring: { exact_score_pts: 3, correct_winner_pts: 1 }
@@ -338,7 +365,7 @@ function abrirModalCrear() {
   createForm.value = {
     name: '', confederacion: '', competition_id: '',
     season: '', torneo: '', description: '',
-    is_paid: false, entry_fee: 0,
+    is_public: false, is_paid: false, entry_fee: 0,
     scoring: { exact_score_pts: 3, correct_winner_pts: 1 }
   }
   matchdays.value  = []
@@ -416,6 +443,7 @@ async function createQuiniela() {
       season:         createForm.value.season,
       torneo:         createForm.value.torneo,
       description:    createForm.value.description,
+      is_public:      createForm.value.is_public,
       is_paid:        createForm.value.is_paid,
       entry_fee:      createForm.value.entry_fee,
       scoring:        createForm.value.scoring,
@@ -482,7 +510,11 @@ function statusBadge(s) {
   background: var(--bg-card); border: 1px dashed var(--border-light);
   border-radius: var(--radius-lg);
 }
-.empty-icon  { font-size: 3rem; margin-bottom: 1rem; }
+.empty-icon  {
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 2px dashed var(--border-light);
+  margin: 0 auto 1rem;
+}
 .empty-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; }
 .empty-desc  { color: var(--text-muted); font-size: 0.9rem; }
 
@@ -569,6 +601,47 @@ function statusBadge(s) {
 
 .optional { font-size: 0.72rem; color: var(--text-muted); font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: 0.3rem; }
 
+/* Visibilidad */
+.visibility-row { margin-bottom: 1rem; }
+.visibility-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.vis-btn {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 0.15rem; padding: 0.75rem 1rem;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-surface); cursor: pointer; text-align: left;
+  transition: all 0.15s;
+}
+.vis-btn:hover:not(.disabled) { border-color: var(--accent); }
+.vis-btn.active { border-color: var(--accent); background: var(--accent-glow); }
+.vis-btn.disabled { opacity: 0.5; cursor: not-allowed; }
+.vis-icon { display: block; width: 16px; height: 16px; margin-bottom: 0.3rem; }
+.vis-icon--lock {
+  border: 2px solid var(--text-secondary); border-radius: 3px; position: relative;
+}
+.vis-icon--lock::before {
+  content: ''; position: absolute; top: -6px; left: 2px;
+  width: 8px; height: 7px;
+  border: 2px solid var(--text-secondary); border-bottom: none; border-radius: 4px 4px 0 0;
+}
+.vis-icon--globe {
+  border: 2px solid var(--text-secondary); border-radius: 50%;
+}
+.vis-icon--globe::after {
+  content: ''; display: block; width: 8px; height: 2px;
+  background: var(--text-secondary); margin: 5px auto 0;
+}
+.vis-btn.active .vis-icon--lock,
+.vis-btn.active .vis-icon--globe,
+.vis-btn.active .vis-icon--lock::before { border-color: var(--accent); }
+.vis-btn.active .vis-icon--globe::after { background: var(--accent); }
+.vis-label { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem; }
+.vis-desc  { font-size: 0.75rem; color: var(--text-muted); }
+.vis-premium-tag {
+  font-size: 0.62rem; font-weight: 700; padding: 0.1rem 0.35rem;
+  background: var(--accent-glow); color: var(--accent);
+  border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+
 .paid-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 .toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; white-space: nowrap; }
 .scoring-section { background: var(--bg-surface); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; }
@@ -585,4 +658,12 @@ function statusBadge(s) {
 .free-banner strong { color: var(--warning); }
 .crear-btn-wrapper button:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-sm { padding: 0.35rem 0.85rem; font-size: 0.8rem; }
+
+@media (max-width: 540px) {
+  .dash-header  { flex-direction: column; }
+  .dash-actions { width: 100%; }
+  .dash-actions .btn { flex: 1; }
+  .conf-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-row  { grid-template-columns: 1fr; }
+}
 </style>

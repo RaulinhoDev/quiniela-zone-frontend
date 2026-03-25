@@ -57,7 +57,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function refreshUser() {
     try {
-      const res = await api.get('/users/profile')
+      const res = await api.get('/auth/me')
       user.value = { ...user.value, ...res.data }
       localStorage.setItem('user', JSON.stringify(user.value))
     } catch {}

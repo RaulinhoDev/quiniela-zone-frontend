@@ -14,6 +14,7 @@ const routes = [
   { path: '/forgot-password', component: () => import('@/views/auth/ForgotPasswordView.vue'),       meta: { public: true } },
   { path: '/reset-password',  component: () => import('@/views/auth/ResetPasswordView.vue'),        meta: { public: true } },
   { path: '/q/:id',           component: () => import('@/views/quinielas/QuinielaPublicaView.vue'), meta: { public: true } },
+  { path: '/privacidad',      component: () => import('@/views/PrivacidadView.vue'),                meta: { public: true } },
 
   // ── App usuario (requiere login) ──────────────────────────────
   {
@@ -23,6 +24,7 @@ const routes = [
     children: [
       { path: '',                                  redirect: '/app/dashboard' },
       { path: 'dashboard',                         component: () => import('@/views/DashboardView.vue') },
+      { path: 'explorar',                          component: () => import('@/views/ExplorarView.vue') },
       { path: 'quinielas/:id',                     component: () => import('@/views/quinielas/QuinielaView.vue') },
       { path: 'quinielas/:id/historial',           component: () => import('@/views/quinielas/HistorialView.vue') },
       { path: 'quinielas/:id/predecir/:jornadaId', component: () => import('@/views/quinielas/PredecirView.vue') },
@@ -50,7 +52,7 @@ const routes = [
     ]
   },
 
-  { path: '/:pathMatch(.*)*', redirect: '/' },
+  { path: '/:pathMatch(.*)*', component: () => import('@/views/NotFoundView.vue') },
 ]
 
 const router = createRouter({

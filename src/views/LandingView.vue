@@ -4,7 +4,7 @@
     <!-- Navbar -->
     <nav class="nav" :class="{ scrolled: scrolled }">
       <div class="container nav-inner">
-        <span class="nav-logo">⚽ QUINIELA ZONE</span>
+        <span class="nav-logo">QUINIELA ZONE</span>
         <div class="nav-links">
           <a href="#como" class="nav-link" @click.prevent="scrollTo('como')">Cómo funciona</a>
           <a href="#ligas" class="nav-link" @click.prevent="scrollTo('ligas')">Ligas</a>
@@ -20,7 +20,7 @@
     <section class="hero">
       <div class="container hero-inner">
         <div class="hero-content">
-          <div class="hero-badge">🏆 Ligas de América Central y Europa</div>
+          <div class="hero-badge">Ligas de América Central y Europa</div>
           <h1 class="hero-title">
             PREDECÍ.<br>
             COMPETÍ.<br>
@@ -37,22 +37,6 @@
             <router-link to="/login" class="btn btn-secondary btn-lg">
               Ya tengo cuenta
             </router-link>
-          </div>
-          <div class="hero-stats">
-            <div class="hs-item">
-              <span class="hs-val">500+</span>
-              <span class="hs-lbl">Usuarios</span>
-            </div>
-            <div class="hs-sep"></div>
-            <div class="hs-item">
-              <span class="hs-val">80+</span>
-              <span class="hs-lbl">Quinielas</span>
-            </div>
-            <div class="hs-sep"></div>
-            <div class="hs-item">
-              <span class="hs-val">10k+</span>
-              <span class="hs-lbl">Predicciones</span>
-            </div>
           </div>
         </div>
 
@@ -79,7 +63,7 @@
             <div class="vc-ranking">
               <div v-for="(p, i) in mockRanking" :key="i" class="vc-row" :class="{ 'vc-row-me': i === 2 }">
                 <span class="vc-rank" :class="i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''">
-                  {{ i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1 }}
+                  {{ i + 1 }}
                 </span>
                 <span class="vc-user">{{ p.user }}</span>
                 <span class="vc-pred">{{ p.pred }}</span>
@@ -94,8 +78,8 @@
           </div>
 
           <!-- Decoración flotante -->
-          <div class="v-badge v-badge-1">⚽ Gol de Olimpia!</div>
-          <div class="v-badge v-badge-2">🏆 +3 pts exacto</div>
+          <div class="v-badge v-badge-1">Gol de Olimpia!</div>
+          <div class="v-badge v-badge-2">+3 pts — exacto</div>
         </div>
       </div>
     </section>
@@ -108,7 +92,6 @@
         <div class="steps-grid">
           <div class="step-card" v-for="(s, i) in steps" :key="i">
             <div class="step-num">0{{ i + 1 }}</div>
-            <div class="step-icon">{{ s.icon }}</div>
             <div class="step-title">{{ s.title }}</div>
             <div class="step-desc">{{ s.desc }}</div>
           </div>
@@ -123,7 +106,7 @@
         <h2 class="section-heading">Jugá con las ligas que seguís</h2>
         <div class="leagues-grid">
           <div class="league-item" v-for="l in leagues" :key="l.name">
-            <span class="league-flag">{{ l.flag }}</span>
+            <span class="league-code">{{ l.code }}</span>
             <div>
               <div class="league-name">{{ l.name }}</div>
               <div class="league-country">{{ l.country }}</div>
@@ -138,8 +121,8 @@
       <div class="container">
         <div class="section-label">Por qué Quiniela Zone</div>
         <div class="features-grid">
-          <div class="feature-card" v-for="f in features" :key="f.icon">
-            <div class="feature-icon">{{ f.icon }}</div>
+          <div class="feature-card" v-for="f in features" :key="f.title">
+            <div class="feature-bar"></div>
             <div class="feature-title">{{ f.title }}</div>
             <div class="feature-desc">{{ f.desc }}</div>
           </div>
@@ -163,12 +146,13 @@
     <!-- Footer -->
     <footer class="footer">
       <div class="container footer-inner">
-        <span class="footer-logo">⚽ QUINIELA ZONE</span>
+        <span class="footer-logo">QUINIELA ZONE</span>
         <div class="footer-links">
           <router-link to="/login" class="footer-link">Iniciar sesión</router-link>
           <router-link to="/registro" class="footer-link">Registrarse</router-link>
+          <router-link to="/privacidad" class="footer-link">Política de Privacidad</router-link>
         </div>
-        <span class="footer-copy">Fútbol, siempre. 🇭🇳</span>
+        <span class="footer-copy">© 2026 Quiniela Zone</span>
       </div>
     </footer>
 
@@ -195,47 +179,44 @@ onMounted(() => window.addEventListener('scroll', onScroll))
 onUnmounted(() => window.removeEventListener('scroll', onScroll))
 
 const mockRanking = [
-  { user: 'carlos_hn', pred: '2-1 ✓', pts: 47 },
-  { user: 'maria_cr',  pred: '2-1 ✓', pts: 41 },
-  { user: 'pedro_gt',  pred: '1-1',   pts: 38 },
-  { user: 'ana_sv',    pred: '3-2',   pts: 32 },
-  { user: 'jose_ni',   pred: '2-0',   pts: 28 },
+  { user: 'carlos_hn', pred: '2-1', pts: 47 },
+  { user: 'maria_cr',  pred: '2-1', pts: 41 },
+  { user: 'pedro_gt',  pred: '1-1', pts: 38 },
+  { user: 'ana_sv',    pred: '3-2', pts: 32 },
+  { user: 'jose_ni',   pred: '2-0', pts: 28 },
 ]
 
 const steps = [
   {
-    icon: '🏆',
     title: 'Creá tu quiniela',
     desc: 'Elegí la competición, ponele nombre y configurá las reglas. En menos de un minuto.',
   },
   {
-    icon: '📩',
     title: 'Invitá a tus amigos',
     desc: 'Compartí el código único o el link directo. Los participantes se unen antes de la primera jornada.',
   },
   {
-    icon: '⚽',
     title: 'Predecí y competí',
     desc: 'Ingresá tus predicciones antes de cada jornada. Los puntos se calculan solos cuando terminan los partidos.',
   },
 ]
 
 const leagues = [
-  { flag: '🇭🇳', name: 'Liga Nacional', country: 'Honduras' },
-  { flag: '🇨🇷', name: 'Primera División', country: 'Costa Rica' },
-  { flag: '🇬🇹', name: 'Liga Nacional', country: 'Guatemala' },
-  { flag: '🇸🇻', name: 'Primera División', country: 'El Salvador' },
-  { flag: '🌍', name: 'UEFA Champions League', country: 'Europa' },
-  { flag: '🌎', name: 'Copa Oro', country: 'CONCACAF' },
+  { code: 'HN', name: 'Liga Nacional',       country: 'Honduras' },
+  { code: 'CR', name: 'Primera División',    country: 'Costa Rica' },
+  { code: 'GT', name: 'Liga Nacional',       country: 'Guatemala' },
+  { code: 'SV', name: 'Primera División',    country: 'El Salvador' },
+  { code: 'EU', name: 'Champions League',    country: 'Europa' },
+  { code: 'CC', name: 'Copa Oro',            country: 'CONCACAF' },
 ]
 
 const features = [
-  { icon: '📊', title: 'Puntos automáticos', desc: 'Exacto vale 3 pts, ganador correcto 1 pt. Sin calcular nada a mano.' },
-  { icon: '🔴', title: 'Resultados en vivo', desc: 'Marcadores en tiempo real vía Server-Sent Events. El ranking se mueve mientras juegan los partidos.' },
-  { icon: '🔒', title: 'Predicciones bloqueadas', desc: 'No podés cambiar tu predicción una vez que el partido comienza. Sin trampa.' },
-  { icon: '📅', title: 'Jornada a jornada', desc: 'El organizador abre cada jornada cuando quiere. Predecís hasta que empiece el primer partido.' },
-  { icon: '👑', title: 'Premium sin límites', desc: 'Quinielas ilimitadas, hasta 50 participantes. Upgrade cuando quieras.' },
-  { icon: '🔗', title: 'Invitación por link', desc: 'Compartí un link directo o código. Tus amigos se unen en un click desde el celular.' },
+  { title: 'Puntos automáticos',    desc: 'Exacto vale 3 pts, ganador correcto 1 pt. Sin calcular nada a mano.' },
+  { title: 'Resultados en vivo',    desc: 'Marcadores en tiempo real. El ranking se mueve mientras juegan los partidos.' },
+  { title: 'Predicciones selladas', desc: 'No podés cambiar tu predicción una vez que el partido comienza. Sin trampa.' },
+  { title: 'Jornada a jornada',     desc: 'El organizador abre cada jornada cuando quiere. Predecís hasta el primer partido.' },
+  { title: 'Premium sin límites',   desc: 'Quinielas ilimitadas, hasta 50 participantes. Upgrade cuando quieras.' },
+  { title: 'Invitación por link',   desc: 'Compartí un link directo o código. Tus amigos se unen en un clic desde el celular.' },
 ]
 </script>
 
@@ -440,8 +421,7 @@ const features = [
   color: var(--border-light); position: absolute; top: 1rem; right: 1.25rem;
   letter-spacing: -0.02em;
 }
-.step-icon  { font-size: 2rem; margin-bottom: 1rem; }
-.step-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+.step-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; margin-top: 0.5rem; }
 .step-desc  { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.65; }
 
 /* ── Ligas ──────────────────────────────────────────────────── */
@@ -456,7 +436,12 @@ const features = [
   border-radius: var(--radius-lg); transition: border-color 0.2s;
 }
 .league-item:hover { border-color: var(--border-light); }
-.league-flag  { font-size: 1.75rem; }
+.league-code {
+  width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+  background: var(--accent-glow); border: 1px solid rgba(0,229,160,0.3);
+  color: var(--accent); font-size: 0.65rem; font-weight: 800;
+  letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center;
+}
 .league-name  { font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
 .league-country { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
 
@@ -471,7 +456,7 @@ const features = [
   transition: border-color 0.2s, transform 0.2s;
 }
 .feature-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
-.feature-icon  { font-size: 1.75rem; margin-bottom: 0.75rem; }
+.feature-bar   { width: 20px; height: 3px; background: var(--accent); border-radius: 2px; margin-bottom: 1rem; }
 .feature-title { font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem; }
 .feature-desc  { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
 

@@ -2,7 +2,7 @@
   <div class="auth-page">
     <div class="auth-box">
       <router-link to="/" class="auth-logo">
-        <span>⚽</span>
+        
         <span class="logo-text">QUINIELA ZONE</span>
       </router-link>
 

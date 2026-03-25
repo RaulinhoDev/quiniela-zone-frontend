@@ -6,7 +6,7 @@
         <p class="page-sub">{{ fechaHoy }}</p>
       </div>
       <button class="btn btn-secondary btn-sm" @click="loadData" :disabled="loading">
-        {{ loading ? 'Cargando...' : '🔄 Actualizar' }}
+        {{ loading ? 'Cargando...' : 'Actualizar' }}
       </button>
     </div>
 
@@ -18,7 +18,7 @@
       <div class="metrics-grid">
         <div class="metric-card card accent-green">
           <div class="mc-header">
-            <span class="mc-icon">👥</span>
+            <span class="mc-icon mc-icon--users"></span>
             <span class="mc-trend">+{{ data.metricas.usuariosEstaSemana }} esta semana</span>
           </div>
           <div class="mc-val">{{ data.metricas.totalUsuarios }}</div>
@@ -43,7 +43,7 @@
 
         <div class="metric-card card accent-blue">
           <div class="mc-header">
-            <span class="mc-icon">🏆</span>
+            <span class="mc-icon mc-icon--pools"></span>
             <span class="mc-trend">{{ data.metricas.totalParticipantes }} participaciones</span>
           </div>
           <div class="mc-val">{{ data.metricas.totalQuinielas }}</div>
@@ -68,9 +68,9 @@
 
         <div class="metric-card card accent-yellow">
           <div class="mc-header">
-            <span class="mc-icon">⚽</span>
+            <span class="mc-icon mc-icon--matches"></span>
             <span v-if="data.metricas.partidosEnVivo > 0" class="mc-trend live">
-              🟢 {{ data.metricas.partidosEnVivo }} en vivo
+              <span class="live-dot"></span>{{ data.metricas.partidosEnVivo }} en vivo
             </span>
             <span v-else class="mc-trend">Sin partidos en vivo</span>
           </div>
@@ -80,7 +80,7 @@
 
         <div class="metric-card card accent-purple">
           <div class="mc-header">
-            <span class="mc-icon">📊</span>
+            <span class="mc-icon mc-icon--preds"></span>
             <span class="mc-trend">+{{ data.metricas.prediccionesEstaSemana.toLocaleString() }} esta semana</span>
           </div>
           <div class="mc-val">{{ data.metricas.totalPredicciones.toLocaleString() }}</div>
@@ -241,7 +241,15 @@ function statusBadge2(s) {
 .accent-purple { border-top-color: #a855f7; }
 
 .mc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
-.mc-icon   { font-size: 1.3rem; }
+.mc-icon {
+  display: inline-block; width: 20px; height: 20px;
+  border-radius: 4px; flex-shrink: 0;
+}
+.mc-icon--users  { background: var(--accent); clip-path: circle(40% at 50% 38%); opacity: 0.8; }
+.mc-icon--pools  { background: #60a5fa; clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); opacity: 0.8; }
+.mc-icon--matches { background: #facc15; border-radius: 50%; opacity: 0.8; }
+.mc-icon--preds  { background: #c084fc; clip-path: polygon(0 100%, 30% 50%, 60% 70%, 100% 0%, 100% 100%); opacity: 0.8; }
+.live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #00e5a0; margin-right: 4px; box-shadow: 0 0 4px #00e5a0; }
 .mc-trend  { font-size: 0.72rem; color: var(--text-muted); }
 .mc-trend.live { color: var(--accent); font-weight: 600; }
 

@@ -34,7 +34,7 @@
               :title="`${t.name} · ${t.competition} ${t.season}`"
             >
               <div class="trofeo-glow"></div>
-              <div class="trofeo-emoji">🏆</div>
+              <div class="trofeo-emoji"></div>
               <div class="trofeo-spark s1"></div>
               <div class="trofeo-spark s2"></div>
               <div class="trofeo-spark s3"></div>
@@ -55,7 +55,7 @@
               :title="`${t.name} · ${t.competition} ${t.season}`"
             >
               <div class="trofeo-glow"></div>
-              <div class="trofeo-emoji">🏆</div>
+              <div class="trofeo-emoji"></div>
               <div class="trofeo-spark s1"></div>
               <div class="trofeo-spark s2"></div>
               <div class="trofeo-spark s3"></div>
@@ -165,7 +165,12 @@ function countryName(c) {
   animation: trofeo-pulse 2.5s ease-in-out infinite; pointer-events: none;
 }
 @keyframes trofeo-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-.trofeo-emoji { font-size: 2.2rem; line-height: 1; filter: drop-shadow(0 0 6px rgba(245,166,35,0.7)); animation: trofeo-float 3s ease-in-out infinite; }
+.trofeo-emoji {
+  width: 2rem; height: 2rem;
+  background: linear-gradient(135deg, #f5a623, #f0c040);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  filter: drop-shadow(0 0 6px rgba(245,166,35,0.7)); animation: trofeo-float 3s ease-in-out infinite;
+}
 @keyframes trofeo-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 .trofeo-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; color: #f5a623; text-transform: uppercase; }
 .trofeo-spark { position: absolute; width: 4px; height: 4px; background: #f5e642; border-radius: 50%; animation: spark-twinkle 1.8s ease-in-out infinite; }

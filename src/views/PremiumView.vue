@@ -1,81 +1,114 @@
 <template>
-  <div class="page">
-    <div class="premium-header">
-      <h1 class="page-title">PLANES</h1>
-      <p class="page-sub">Elegí el plan que mejor se adapta a vos</p>
+  <div class="page premium-page">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-content">
+        <div class="hero-badge">QUINIELA ZONE PREMIUM</div>
+        <h1 class="hero-title">Jugá sin límites</h1>
+        <p class="hero-sub">Creá todas las quinielas que quieras, invitá a más gente y llevá tu grupo al siguiente nivel.</p>
+      </div>
     </div>
 
     <!-- Planes -->
     <div class="plans-grid">
+
       <!-- Free -->
-      <div class="plan-card card" :class="{ current: !auth.user?.is_premium }">
-        <div class="plan-badge" v-if="!auth.user?.is_premium">Plan actual</div>
-        <div class="plan-name">Free</div>
-        <div class="plan-price">
-          <span class="plan-amount">$0</span>
-          <span class="plan-period">/mes</span>
+      <div class="plan-card" :class="{ 'plan-active': !auth.user?.is_premium }">
+        <div class="plan-current-badge" v-if="!auth.user?.is_premium">Plan actual</div>
+        <div class="plan-header">
+          <div class="plan-name">Free</div>
+          <div class="plan-price">
+            <span class="price-amount">$0</span>
+            <span class="price-period">/mes</span>
+          </div>
+          <div class="plan-desc">Para empezar a jugar con tus amigos</div>
         </div>
-        <div class="plan-desc">Para empezar a jugar con tus amigos</div>
         <ul class="plan-features">
-          <li class="feature">✓ 1 quiniela activa como organizador</li>
-          <li class="feature">✓ Hasta 15 participantes</li>
-          <li class="feature">✓ Podés unirte a quinielas ilimitadas</li>
-          <li class="feature muted">✗ Publicidad</li>
-          <li class="feature muted">✗ Quinielas de pago con pozo</li>
-          <li class="feature muted">✗ Estadísticas avanzadas</li>
+          <li class="feat feat--on"><span class="feat-dot on"></span><span>1 quiniela activa como organizador</span></li>
+          <li class="feat feat--on"><span class="feat-dot on"></span><span>Hasta 15 participantes</span></li>
+          <li class="feat feat--on"><span class="feat-dot on"></span><span>Unirte a quinielas ilimitadas</span></li>
+          <li class="feat feat--off"><span class="feat-dot off"></span><span>Sin publicidad</span></li>
+          <li class="feat feat--off"><span class="feat-dot off"></span><span>Quinielas con pozo de premio</span></li>
+          <li class="feat feat--off"><span class="feat-dot off"></span><span>Estadísticas avanzadas</span></li>
         </ul>
-        <button class="btn btn-secondary btn-block" disabled>
-          Plan actual
-        </button>
+        <button class="btn btn-secondary btn-block" disabled>Plan actual</button>
       </div>
 
       <!-- Premium -->
-      <div class="plan-card card premium" :class="{ current: auth.user?.is_premium }">
-        <div class="plan-badge premium-badge">⭐ Recomendado</div>
-        <div class="plan-name">Premium</div>
-        <div class="plan-price">
-          <span class="plan-amount">$2.99</span>
-          <span class="plan-period">/mes</span>
+      <div class="plan-card plan-premium" :class="{ 'plan-active': auth.user?.is_premium }">
+        <div class="plan-glow"></div>
+        <div class="plan-recommended">Recomendado</div>
+
+        <div class="plan-header">
+          <div class="plan-name premium-name">Premium</div>
+          <div class="plan-price">
+            <span class="price-amount price-amount--premium">$3.99</span>
+            <span class="price-period">/mes</span>
+          </div>
+          <div class="plan-desc">Para el organizador que quiere más</div>
         </div>
-        <div class="plan-desc">Para el organizador serio que quiere más</div>
+
         <ul class="plan-features">
-          <li class="feature">✓ Quinielas ilimitadas</li>
-          <li class="feature">✓ Participantes ilimitados</li>
-          <li class="feature">✓ Sin publicidad</li>
-          <li class="feature">✓ Quinielas de pago con pozo</li>
-          <li class="feature">✓ Estadísticas avanzadas</li>
-          <li class="feature">✓ Soporte prioritario</li>
+          <li class="feat feat--premium"><span class="feat-dot premium"></span><span>Quinielas <strong>ilimitadas</strong></span></li>
+          <li class="feat feat--premium"><span class="feat-dot premium"></span><span>Hasta <strong>50 participantes</strong></span></li>
+          <li class="feat feat--premium"><span class="feat-dot premium"></span><span>Sin publicidad</span></li>
+          <li class="feat feat--premium"><span class="feat-dot premium"></span><span>Quinielas con pozo de premio</span></li>
+          <li class="feat feat--premium"><span class="feat-dot premium"></span><span>Estadísticas avanzadas</span></li>
+          <li class="feat feat--premium"><span class="feat-dot premium"></span><span>Soporte prioritario</span></li>
         </ul>
 
-        <div v-if="auth.user?.is_premium">
-          <div class="alert alert-success" style="margin-bottom:1rem">
-            ✓ Ya sos Premium
-          </div>
-          <button class="btn btn-secondary btn-block" @click="goToPortal" :disabled="loading">
+        <div v-if="auth.user?.is_premium" class="premium-active-box">
+          <div class="premium-active-msg">Suscripción activa</div>
+          <button class="btn-premium btn-block" @click="goToPortal" :disabled="loading">
             {{ loading ? 'Cargando...' : 'Gestionar suscripción' }}
           </button>
         </div>
         <div v-else>
-          <button class="btn btn-primary btn-block" @click="goToCheckout" :disabled="loading">
-            {{ loading ? 'Cargando...' : 'Suscribirme ahora' }}
+          <button class="btn-premium btn-block" @click="goToCheckout" :disabled="loading">
+            <span v-if="loading" class="btn-spinner"></span>
+            <span v-else>Suscribirme — $3.99/mes</span>
           </button>
+          <div class="plan-trust">Pago seguro con Stripe · Cancelá cuando quieras</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparativa -->
+    <div class="compare-section">
+      <div class="section-label">¿Por qué Premium?</div>
+      <div class="compare-grid">
+        <div class="compare-item" v-for="c in comparativa" :key="c.label">
+          <div class="compare-bar"></div>
+          <div class="compare-label">{{ c.label }}</div>
+          <div class="compare-desc">{{ c.desc }}</div>
         </div>
       </div>
     </div>
 
     <!-- FAQ -->
-    <div class="card faq-card" style="margin-top:1.5rem">
-      <h2 class="section-title">Preguntas frecuentes</h2>
+    <div class="faq-section">
+      <div class="section-label">Preguntas frecuentes</div>
       <div class="faq-list">
-        <div class="faq-item" v-for="faq in faqs" :key="faq.q" @click="faq.open = !faq.open">
+        <div
+          class="faq-item"
+          v-for="faq in faqs"
+          :key="faq.q"
+          @click="faq.open = !faq.open"
+          :class="{ 'faq-open': faq.open }"
+        >
           <div class="faq-q">
-            {{ faq.q }}
-            <span class="faq-arrow">{{ faq.open ? '▲' : '▼' }}</span>
+            <span>{{ faq.q }}</span>
+            <span class="faq-arrow">{{ faq.open ? '−' : '+' }}</span>
           </div>
-          <div class="faq-a" v-if="faq.open">{{ faq.a }}</div>
+          <transition name="faq">
+            <div class="faq-a" v-if="faq.open">{{ faq.a }}</div>
+          </transition>
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -91,7 +124,7 @@ async function goToCheckout() {
   loading.value = true
   try {
     const res = await api.post('/stripe/checkout')
-    window.open(res.data.url, '_blank')
+    window.location.href = res.data.url
   } catch (e) {
     console.error(e)
   } finally {
@@ -110,6 +143,13 @@ async function goToPortal() {
     loading.value = false
   }
 }
+
+const comparativa = [
+  { label: 'Más quinielas',      desc: 'Creá tantas como quieras, sin restricciones.' },
+  { label: 'Más participantes',  desc: 'Invitá hasta 50 personas por quiniela.' },
+  { label: 'Pozo de premio',     desc: 'Armá quinielas con entrada y premio para el ganador.' },
+  { label: 'Estadísticas',       desc: 'Analizá tu rendimiento con métricas detalladas.' },
+]
 
 const faqs = ref([
   {
@@ -136,54 +176,198 @@ const faqs = ref([
 </script>
 
 <style scoped>
-.premium-header { text-align: center; margin-bottom: 2rem; }
-.page-title     { font-family: var(--font-display); font-size: 2rem; letter-spacing: 0.08em; }
-.page-sub       { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.3rem; }
-.section-title  { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+.premium-page { padding-bottom: 4rem; }
 
+/* ── Hero ─────────────────────────────────────────── */
+.hero {
+  position: relative; text-align: center;
+  padding: 4rem 1rem 3.5rem; overflow: hidden; margin-bottom: 2.5rem;
+}
+.hero-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,229,160,0.1) 0%, transparent 65%);
+}
+.hero-content { position: relative; }
+.hero-badge {
+  display: inline-block;
+  border: 1px solid rgba(0,229,160,0.35); color: var(--accent);
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+  padding: 0.3rem 1.1rem; border-radius: 999px; margin-bottom: 1.5rem;
+  text-transform: uppercase;
+}
+.hero-title {
+  font-family: var(--font-display); font-size: 3.2rem;
+  letter-spacing: 0.05em; color: var(--text-primary);
+  margin-bottom: 0.9rem; line-height: 1.05;
+}
+.hero-sub {
+  color: var(--text-muted); font-size: 1rem;
+  max-width: 460px; margin: 0 auto; line-height: 1.65;
+}
+
+/* ── Plans ────────────────────────────────────────── */
 .plans-grid {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 1rem; max-width: 700px; margin: 0 auto;
+  gap: 1.25rem; max-width: 720px; margin: 0 auto 3.5rem;
 }
 
 .plan-card {
-  position: relative; display: flex;
-  flex-direction: column; gap: 0.75rem; padding: 2rem;
+  position: relative; display: flex; flex-direction: column; gap: 1.5rem;
+  padding: 2rem; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  overflow: hidden; transition: transform 0.2s;
 }
-.plan-card.premium { border-color: var(--accent); }
-.plan-card.current { border-color: var(--accent); }
+.plan-card:hover { transform: translateY(-2px); }
 
-.plan-badge {
-  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+.plan-premium {
+  border-color: rgba(0,229,160,0.4);
+  background: linear-gradient(150deg, rgba(0,229,160,0.05) 0%, var(--bg-card) 45%);
+}
+.plan-glow {
+  position: absolute; top: -60px; right: -60px;
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,229,160,0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.plan-current-badge, .plan-recommended {
+  position: absolute; top: 0; right: 1.5rem;
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 0.25rem 0.7rem;
+  border-radius: 0 0 8px 8px;
+}
+.plan-current-badge {
   background: var(--bg-surface); border: 1px solid var(--border);
-  color: var(--text-muted); font-size: 0.72rem; font-weight: 600;
-  padding: 0.2rem 0.75rem; border-radius: 999px; white-space: nowrap;
-  text-transform: uppercase; letter-spacing: 0.05em;
+  border-top: none; color: var(--text-muted);
 }
-.premium-badge {
-  background: var(--accent-glow); border-color: var(--accent);
-  color: var(--accent);
+.plan-recommended {
+  background: var(--accent); color: #000;
 }
 
-.plan-name   { font-family: var(--font-display); font-size: 1.4rem; letter-spacing: 0.05em; }
-.plan-price  { display: flex; align-items: baseline; gap: 0.2rem; }
-.plan-amount { font-family: var(--font-display); font-size: 2.5rem; color: var(--accent); }
-.plan-period { color: var(--text-muted); font-size: 0.85rem; }
+.plan-header { display: flex; flex-direction: column; gap: 0.35rem; }
+.plan-name   { font-family: var(--font-display); font-size: 1.6rem; letter-spacing: 0.04em; color: var(--text-primary); }
+.premium-name { color: var(--accent); }
+.plan-price  { display: flex; align-items: baseline; gap: 0.2rem; margin-top: 0.2rem; }
+.price-amount { font-family: var(--font-display); font-size: 3rem; line-height: 1; color: var(--text-primary); }
+.price-amount--premium { color: var(--accent); }
+.price-period { color: var(--text-muted); font-size: 0.9rem; }
 .plan-desc   { color: var(--text-muted); font-size: 0.85rem; }
 
-.plan-features { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
-.feature       { font-size: 0.88rem; color: var(--text-secondary); }
-.feature.muted { color: var(--text-muted); }
+/* Features */
+.plan-features {
+  list-style: none; padding: 0; margin: 0; flex: 1;
+  display: flex; flex-direction: column; gap: 0.65rem;
+  border-top: 1px solid var(--border); padding-top: 1.25rem;
+}
+.feat {
+  display: flex; align-items: center; gap: 0.7rem; font-size: 0.88rem;
+}
+.feat-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.feat-dot.on      { background: var(--text-muted); }
+.feat-dot.off     { background: var(--border); }
+.feat-dot.premium { background: var(--accent); box-shadow: 0 0 5px rgba(0,229,160,0.5); }
 
-.faq-card  { max-width: 700px; margin: 0 auto; }
-.faq-list  { display: flex; flex-direction: column; gap: 0; }
-.faq-item  { padding: 1rem 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.feat--on     { color: var(--text-secondary); }
+.feat--off    { color: var(--text-muted); opacity: 0.45; }
+.feat--premium { color: var(--text-primary); }
+.feat--premium strong { color: var(--accent); font-weight: 600; }
+
+/* CTA */
+.btn-premium {
+  width: 100%; padding: 0.9rem 1rem;
+  background: linear-gradient(135deg, #00e5a0, #00b87a);
+  color: #000; font-weight: 700; font-size: 0.92rem;
+  border: none; border-radius: var(--radius); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  transition: opacity 0.15s, transform 0.15s; letter-spacing: 0.02em;
+}
+.btn-premium:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+.btn-premium:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.btn-spinner {
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.25); border-top-color: #000;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.plan-trust {
+  text-align: center; font-size: 0.71rem;
+  color: var(--text-muted); margin-top: 0.8rem; letter-spacing: 0.01em;
+}
+
+.premium-active-box { display: flex; flex-direction: column; gap: 0.75rem; }
+.premium-active-msg {
+  text-align: center; font-size: 0.82rem; font-weight: 600;
+  color: var(--accent); padding: 0.6rem;
+  background: rgba(0,229,160,0.06); border-radius: var(--radius);
+  border: 1px solid rgba(0,229,160,0.25); letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Comparativa ──────────────────────────────────── */
+.compare-section {
+  max-width: 720px; margin: 0 auto 3.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 1.75rem;
+}
+.section-label {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+  border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;
+  width: 100%; text-align: center;
+}
+.compare-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1rem; width: 100%;
+}
+.compare-item {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.5rem 1.25rem;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  transition: border-color 0.2s;
+}
+.compare-item:hover { border-color: rgba(0,229,160,0.3); }
+.compare-bar {
+  width: 24px; height: 3px; border-radius: 2px;
+  background: var(--accent); margin-bottom: 0.25rem;
+}
+.compare-label { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); }
+.compare-desc  { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+
+/* ── FAQ ──────────────────────────────────────────── */
+.faq-section {
+  max-width: 720px; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center; gap: 1.75rem;
+}
+.faq-list  { width: 100%; }
+.faq-item  { padding: 1.1rem 0; border-bottom: 1px solid var(--border); cursor: pointer; }
 .faq-item:last-child { border-bottom: none; }
-.faq-q     { display: flex; justify-content: space-between; font-weight: 500; font-size: 0.9rem; color: var(--text-primary); }
-.faq-arrow { color: var(--text-muted); font-size: 0.7rem; }
-.faq-a     { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.75rem; line-height: 1.6; }
+.faq-q {
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 500; font-size: 0.9rem; color: var(--text-primary);
+  transition: color 0.15s;
+}
+.faq-open .faq-q { color: var(--accent); }
+.faq-arrow {
+  font-size: 1.1rem; color: var(--text-muted);
+  flex-shrink: 0; margin-left: 1rem; line-height: 1;
+}
+.faq-a {
+  color: var(--text-muted); font-size: 0.87rem;
+  margin-top: 0.8rem; line-height: 1.7;
+}
+.faq-enter-active, .faq-leave-active { transition: opacity 0.18s, transform 0.18s; }
+.faq-enter-from, .faq-leave-to { opacity: 0; transform: translateY(-4px); }
 
-@media (max-width: 600px) {
-  .plans-grid { grid-template-columns: 1fr; }
+/* ── Responsive ───────────────────────────────────── */
+@media (max-width: 640px) {
+  .hero-title   { font-size: 2.2rem; }
+  .plans-grid   { grid-template-columns: 1fr; }
+  .compare-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 400px) {
+  .compare-grid { grid-template-columns: 1fr; }
 }
 </style>

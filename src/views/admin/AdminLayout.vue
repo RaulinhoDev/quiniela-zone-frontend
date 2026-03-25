@@ -3,31 +3,18 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <span>⚽</span>
         <span class="logo-text">QUINIELA ZONE</span>
       </div>
 
       <nav class="sidebar-nav">
-        <router-link to="/admin/dashboard"  class="nav-item">
-          <span class="nav-icon">📊</span> Dashboard
-        </router-link>
+        <router-link to="/admin/dashboard"  class="nav-item">Dashboard</router-link>
         <div class="nav-divider"></div>
-        <router-link to="/admin/sync"       class="nav-item">
-          <span class="nav-icon">🔄</span> Sync API
-        </router-link>
-        <router-link to="/admin/jornadas"   class="nav-item">
-          <span class="nav-icon">📅</span> Jornadas
-        </router-link>
-        <router-link to="/admin/partidos"   class="nav-item">
-          <span class="nav-icon">⚽</span> Partidos
-        </router-link>
-        <router-link to="/admin/resultados" class="nav-item">
-          <span class="nav-icon">🏆</span> Resultados
-        </router-link>
+        <router-link to="/admin/sync"       class="nav-item">Sync API</router-link>
+        <router-link to="/admin/jornadas"   class="nav-item">Jornadas</router-link>
+        <router-link to="/admin/partidos"   class="nav-item">Partidos</router-link>
+        <router-link to="/admin/resultados" class="nav-item">Resultados</router-link>
         <div class="nav-divider"></div>
-        <router-link to="/admin/usuarios"   class="nav-item">
-          <span class="nav-icon">👥</span> Usuarios
-        </router-link>
+        <router-link to="/admin/usuarios"   class="nav-item">Usuarios</router-link>
       </nav>
 
       <div class="sidebar-footer">

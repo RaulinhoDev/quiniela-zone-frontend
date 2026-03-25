@@ -1,7 +1,7 @@
 <template>
   <div class="public-page">
     <nav class="pub-nav">
-      <router-link to="/" class="pub-logo">⚽ QUINIELA ZONE</router-link>
+      <router-link to="/" class="pub-logo">QUINIELA ZONE</router-link>
       <div class="pub-nav-actions">
         <router-link to="/login" class="btn btn-secondary btn-sm">Ingresar</router-link>
         <router-link to="/registro" class="btn btn-primary btn-sm">Registrarse</router-link>
@@ -36,10 +36,7 @@
         <div class="ranking-list">
           <div v-for="(p, i) in data.ranking" :key="p.user.id" class="ranking-row">
             <div class="rr-rank">
-              <span v-if="i === 0">🥇</span>
-              <span v-else-if="i === 1">🥈</span>
-              <span v-else-if="i === 2">🥉</span>
-              <span v-else class="rank-num">{{ i + 1 }}</span>
+              <span :class="i < 3 ? `rank-top rank-top-${i+1}` : 'rank-num'">{{ i + 1 }}</span>
             </div>
             <div class="rr-user">
               <span class="rr-username">{{ p.user.username }}</span>
@@ -107,7 +104,11 @@ function countryFlag(c) {
 .ranking-list   { display: flex; flex-direction: column; gap: 0.35rem; }
 .ranking-row    { display: flex; align-items: center; gap: 1rem; padding: 0.7rem 1rem; border-radius: var(--radius); background: var(--bg-surface); }
 .rr-rank  { width: 30px; text-align: center; font-size: 1.1rem; }
-.rank-num { font-family: var(--font-display); color: var(--text-muted); }
+.rank-num  { font-family: var(--font-display); color: var(--text-muted); }
+.rank-top  { font-family: var(--font-display); font-weight: 700; }
+.rank-top-1 { color: #f0c040; }
+.rank-top-2 { color: #b0b8c8; }
+.rank-top-3 { color: #c87040; }
 .rr-user  { flex: 1; display: flex; align-items: center; gap: 0.5rem; }
 .rr-username { font-weight: 500; font-size: 0.92rem; }
 .rr-pts   { font-family: var(--font-display); font-size: 1.1rem; color: var(--accent); }

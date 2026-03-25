@@ -2,7 +2,7 @@
   <div class="auth-page">
     <div class="auth-box">
       <router-link to="/" class="auth-logo">
-        <span>⚽</span>
+        
         <span class="logo-text">QUINIELA ZONE</span>
       </router-link>
 
@@ -64,7 +64,7 @@
 
       <!-- Mensaje de verificación enviado -->
       <div v-else class="verify-sent">
-        <div class="verify-icon">📧</div>
+        <div class="verify-icon"></div>
         <h2 class="verify-title">¡Revisá tu email!</h2>
         <p class="verify-desc">
           Enviamos un link de verificación a
@@ -139,7 +139,24 @@ async function handleRegister() {
 .auth-link  { color: var(--accent); text-decoration: none; font-weight: 600; margin-left: 0.3rem; }
 
 .verify-sent { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.75rem; }
-.verify-icon { font-size: 3.5rem; margin-bottom: 0.5rem; }
+.verify-icon {
+  width: 64px; height: 64px; margin-bottom: 0.5rem;
+  background: var(--accent-glow); border: 2px solid rgba(0,229,160,0.3);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.verify-icon::before {
+  content: ''; display: block;
+  width: 28px; height: 20px;
+  border: 2px solid var(--accent); border-radius: 2px;
+}
+.verify-icon::after {
+  content: ''; position: absolute;
+  top: 18px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 14px solid transparent; border-right: 14px solid transparent;
+  border-top: 10px solid var(--accent);
+}
 .verify-title{ font-size: 1.4rem; font-weight: 600; color: var(--text-primary); }
 .verify-desc { color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6; }
 .verify-hint { color: var(--text-muted); font-size: 0.82rem; line-height: 1.6; }

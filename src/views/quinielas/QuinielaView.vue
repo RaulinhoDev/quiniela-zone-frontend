@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="q-header">
       <div class="q-header-left">
-        <router-link to="/app/dashboard" class="back-link">← Mis quinielas</router-link>
+        <a class="back-link" @click.prevent="goBack" href="#">← Volver</a>
         <h1 class="q-title">{{ data.quiniela.name }}</h1>
         <div class="q-meta">
           {{ data.quiniela.competition }} · {{ data.quiniela.season }} ·
@@ -19,10 +19,10 @@
           <div class="invite-code" @click="copyCode" title="Copiar código de invitación">
             <span class="code-label">Código</span>
             <span class="code-val">{{ data.quiniela.invite_code }}</span>
-            <span class="code-copy">📋</span>
+            <span class="code-copy">⎘</span>
           </div>
           <button class="btn btn-secondary btn-sm invite-link-btn" @click="copyLink" title="Copiar link de invitación">
-            🔗 Copiar link
+            Copiar link
           </button>
         </div>
       </div>
@@ -60,16 +60,16 @@
 
       <!-- Owner: botón abrir -->
       <div v-if="isOwner" class="eq-owner-section">
-        <div class="eq-owner-title">👑 Sos el organizador</div>
+        <div class="eq-owner-title">Sos el organizador</div>
         <p class="eq-owner-desc">Cuando todos estén listos, abrí la quiniela para que empiecen las predicciones. La jornada 1 se abrirá automáticamente.</p>
         <button class="btn btn-primary" @click="abrirQuiniela" :disabled="abriendo">
-          {{ abriendo ? 'Abriendo...' : '🚀 Abrir quiniela' }}
+          {{ abriendo ? 'Abriendo...' : 'Abrir quiniela' }}
         </button>
       </div>
 
       <!-- Participante: cartel de espera -->
       <div v-else class="eq-espera">
-        <div class="eq-espera-icon">⏳</div>
+        <div class="eq-espera-icon"></div>
         <div class="eq-espera-title">Esperando al organizador</div>
         <p class="eq-espera-desc">{{ data.quiniela.owner }} aún no abrió la quiniela. Te avisaremos cuando empiece.</p>
       </div>
@@ -80,7 +80,7 @@
       <div class="ja-header">
         <div>
           <div class="ja-title">
-            {{ jornadaCerrada ? '🔴' : '🟢' }}
+            <span :class="jornadaCerrada ? 'status-dot dot-red' : 'status-dot dot-green'"></span>
             {{ data.quiniela.jornada_activa.matchday?.name || `Jornada ${data.quiniela.jornada_activa.round_number}` }}
             — {{ jornadaCerrada ? 'Cerrada' : 'Abierta' }}
           </div>
@@ -95,10 +95,10 @@
           :to="`/app/quinielas/${data.quiniela.id}/predecir/${data.quiniela.jornada_activa.id}`"
           :class="['btn', yaPredicé ? 'btn-secondary' : 'btn-primary']"
         >
-          {{ yaPredicé ? '✓ Ya predije' : 'Predecir ahora →' }}
+          {{ yaPredicé ? 'Ya predije' : 'Predecir ahora →' }}
         </router-link>
         <span v-else-if="!yaPredicé" class="badge badge-gray">No predijiste</span>
-        <span v-else class="badge badge-green">✓ Predicción enviada</span>
+        <span v-else class="badge badge-green">Predicción enviada</span>
       </div>
 
       <!-- Partidos de la jornada activa con predicciones -->
@@ -137,7 +137,7 @@
 
       <!-- Aviso no predicó -->
       <div v-if="!yaPredicé && !jornadaCerrada" class="no-pred-hint">
-        ⚠️ Todavía no predijiste esta jornada
+        Todavía no predijiste esta jornada
       </div>
 
       <!-- Predicciones de todos + puntos por jornada (solo si hay partidos terminados) -->
@@ -205,7 +205,7 @@
 
       <!-- Aviso jornada cerrada esperando resultados -->
       <div v-if="isOwner && jornadaCerrada" class="owner-next">
-        <div class="on-title">⏳ Predicciones cerradas</div>
+        <div class="on-title">Predicciones cerradas</div>
         <p class="on-desc">Cuando terminen todos los partidos, la siguiente jornada se abrirá automáticamente.</p>
       </div>
     </div>
@@ -213,7 +213,7 @@
     <!-- Próxima jornada (solo si hay una activa y no está cerrada) -->
     <div v-if="proximaJornada && !jornadaCerrada" class="card proxima-jornada">
       <div class="pj-header">
-        <div class="pj-title">📅 Próxima — {{ proximaJornada.name }}</div>
+        <div class="pj-title">Próxima — {{ proximaJornada.name }}</div>
         <span class="badge badge-gray">Próximamente</span>
       </div>
       <div class="partidos-proxima">
@@ -250,10 +250,7 @@
           @click="router.push(p.user.id == auth.user?.id ? '/app/perfil' : `/app/usuarios/${p.user.username}`)"
         >
           <div class="rr-rank">
-            <span v-if="p.rank === 1" class="medal">🥇</span>
-            <span v-else-if="p.rank === 2" class="medal">🥈</span>
-            <span v-else-if="p.rank === 3" class="medal">🥉</span>
-            <span v-else class="rank-num">{{ p.rank }}</span>
+            <span :class="p.rank <= 3 ? `rank-top rank-top-${p.rank}` : 'rank-num'">{{ p.rank }}</span>
           </div>
           <div class="rr-user">
             <span class="rr-username">
@@ -264,7 +261,7 @@
           </div>
           <div class="rr-stats">
             <span class="rr-pts">{{ p.total_points }} <small>pts</small></span>
-            <span class="rr-detail">{{ p.exact_scores }}✓ {{ p.correct_winners }}△</span>
+            <span class="rr-detail">{{ p.exact_scores }} exactos · {{ p.correct_winners }} ganadores</span>
           </div>
           <!-- Flecha de movimiento -->
           <div class="rr-movement" v-if="rankMovement.get(p.user.id)">
@@ -326,6 +323,14 @@ const route  = useRoute()
 const router = useRouter()
 const auth   = useAuthStore()
 
+function goBack() {
+  if (window.history.state?.back) {
+    router.back()
+  } else {
+    router.push('/app/dashboard')
+  }
+}
+
 const data            = ref(null)
 const partidosJornada = ref([])
 const misPredicciones = ref({})
@@ -383,7 +388,7 @@ function startSse() {
       const event = JSON.parse(e.data)
       if (event.type === 'resultado') {
         const miPosAntes = data.value?.ranking?.findIndex(p => p.user.id === auth.user?.id) ?? -1
-        showToast(`⚽ ${event.homeTeam} ${event.homeScore}-${event.awayScore} ${event.awayTeam}`)
+        showToast(`${event.homeTeam} ${event.homeScore}-${event.awayScore} ${event.awayTeam}`)
         await loadData()
         // Recargar predicciones de todos si el tab está visible
         const jornadaActiva = data.value?.quiniela?.jornada_activa
@@ -393,7 +398,7 @@ function startSse() {
         const miPosAhora = data.value?.ranking?.findIndex(p => p.user.id === auth.user?.id) ?? -1
         if (miPosAntes !== -1 && miPosAhora > miPosAntes) {
           const nuevoLider = data.value.ranking[miPosAhora - 1]
-          if (nuevoLider) showToast(`⚠️ ¡${nuevoLider.user.username} te superó en el ranking!`)
+          if (nuevoLider) showToast(`¡${nuevoLider.user.username} te superó en el ranking!`)
         }
       }
     } catch {}
@@ -510,7 +515,7 @@ async function compartirTabla() {
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
             title: `Ranking — ${data.value.quiniela.name}`,
-            text:  '¡Mirá el ranking de nuestra quiniela! 🏆',
+            text:  '¡Mirá el ranking de nuestra quiniela!',
             files: [file],
           })
         } else {
@@ -539,7 +544,7 @@ async function abrirQuiniela() {
   abriendo.value = true
   try {
     await api.post(`/quinielas/${route.params.id}/abrir`)
-    showToast('🚀 ¡Quiniela abierta! La jornada 1 ya está disponible.')
+    showToast('¡Quiniela abierta! La jornada 1 ya está disponible.')
     await loadData()
   } catch (e) {
     showToast(e?.response?.data?.message || 'Error al abrir la quiniela')
@@ -550,7 +555,7 @@ async function abrirQuiniela() {
 
 async function copyCode() {
   await navigator.clipboard.writeText(data.value?.quiniela?.invite_code)
-  showToast('✓ Código copiado')
+  showToast('Código copiado')
 }
 
 async function copyLink() {
@@ -567,7 +572,7 @@ async function copyLink() {
     } catch {}
   }
   await navigator.clipboard.writeText(link)
-  showToast('✓ Link copiado — compartilo con tus amigos')
+  showToast('Link copiado — compartilo con tus amigos')
 }
 
 function showToast(msg) {
@@ -615,6 +620,10 @@ function formatDate(d) {
 .invite-code:hover { border-color: var(--accent); }
 .code-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; }
 .code-val   { font-family: var(--font-display); font-size: 1rem; color: var(--accent); letter-spacing: 0.1em; }
+
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.3rem; vertical-align: middle; }
+.dot-green  { background: #00e5a0; box-shadow: 0 0 4px #00e5a0; }
+.dot-red    { background: #ff5e5e; }
 
 .jornada-activa { margin-bottom: 1rem; border-color: rgba(0,229,160,0.3); }
 .ja-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
@@ -750,8 +759,11 @@ function formatDate(d) {
 .move-same   { color: var(--text-muted); }
 
 .rr-rank  { width: 32px; text-align: center; flex-shrink: 0; }
-.medal    { font-size: 1.2rem; }
 .rank-num { font-family: var(--font-display); font-size: 1.1rem; color: var(--text-muted); }
+.rank-top { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; }
+.rank-top-1 { color: #f0c040; }
+.rank-top-2 { color: #b0b8c8; }
+.rank-top-3 { color: #c87040; }
 .rr-user  { flex: 1; display: flex; align-items: center; gap: 0.5rem; }
 .rr-username { font-weight: 500; color: var(--text-primary); font-size: 0.92rem; }
 .rr-username-link { font-weight: 500; color: var(--text-primary); font-size: 0.92rem; text-decoration: none; }
@@ -816,7 +828,12 @@ function formatDate(d) {
   gap: 0.5rem; padding: 2rem; text-align: center;
   border-top: 1px solid var(--border);
 }
-.eq-espera-icon  { font-size: 2rem; }
+.eq-espera-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid var(--warning); border-top-color: transparent;
+  animation: spin 1.2s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 .eq-espera-title { font-weight: 700; font-size: 1.05rem; color: var(--text-primary); }
 .eq-espera-desc  { font-size: 0.84rem; color: var(--text-muted); max-width: 320px; }
 </style>
